@@ -12,6 +12,14 @@
 
 诊断分类逻辑忠实复现结题报告 3.2.6 的四类诊断信号（高需求—低供给 / 高需求—高供给—高风险 / 低需求—高风险 / 低需求—高供给），判定规则见 `dashboard_data.py::classify_anchor`。
 
+## 渲染验证
+
+核心地图组件（pydeck `ScatterplotLayer`，气泡大小 = DHI 需求热度、颜色 = SMI 错配度）渲染截图：
+
+![锚点地图渲染预览](assets/dashboard_map_preview.png)
+
+> 注：该截图由 headless Chromium 对 pydeck 静态渲染生成，用于验证地图组件；完整 Streamlit 页面请本地运行查看。
+
 ## 本地运行
 
 ```powershell
