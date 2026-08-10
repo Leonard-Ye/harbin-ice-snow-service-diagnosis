@@ -1,0 +1,39 @@
+# 交互式 Dashboard —— 哈尔滨冰雪旅游服务设施供需诊断
+
+基于 Streamlit 的单页交互应用，将结题报告的静态图表转为可交互展示，数据仅依赖已入库的 `V30` 聚合结果（**不含任何原始评论/笔记，可直接公开**）。
+
+## 功能
+
+| 页签 | 内容 |
+|---|---|
+| 总览地图 | pydeck 锚点地图（气泡大小=DHI 需求热度，颜色=SMI 错配度）+ SMI 排名条形图 + 诊断类型分布 |
+| 指标筛选与象限 | DHI/SSI/ERI 阈值滑块筛选 + DHI×SSI 供需象限图（对应报告图 3-18）+ 明细表 |
+| 单锚点诊断 | 五指标卡片 + 小红书痛点触发率雷达图 + 大众点评餐饮压力 + 自动诊断类型与优化策略 |
+
+诊断分类逻辑忠实复现结题报告 3.2.6 的四类诊断信号（高需求—低供给 / 高需求—高供给—高风险 / 低需求—高风险 / 低需求—高供给），判定规则见 `dashboard_data.py::classify_anchor`。
+
+## 本地运行
+
+```powershell
+pip install -r requirements.txt
+cd 05_streamlit_dashboard
+streamlit run app.py
+```
+
+## 部署到 Streamlit Cloud（免费）
+
+1. 将本仓库推送到 GitHub（`git remote add origin <你的仓库地址> && git push -u origin main`）。
+2. 登录 <https://share.streamlit.io> → New app → 选择仓库。
+3. 配置：
+   - **Main file path**: `05_streamlit_dashboard/app.py`
+   - **Python version**: 3.11+（仓库默认即可）
+4. Deploy。依赖由 `requirements.txt` 自动安装（含 streamlit/plotly/pydeck）。
+
+> 注意：仓库根目录即 Streamlit 的工作目录，`dashboard_data.py` 通过脚本相对位置推导数据路径，clone 后无需任何配置。
+
+## 数据与口径边界
+
+- 数据源：`02_多源融合数据及核心脚本/V30_Multi_Source_Fusion_R2/*.csv`（20 锚点聚合统计）。
+- 所有指标为 20 锚点样本内 Z-score 相对值（0 = 样本均值），`DHI/SSI/ERI > 0` 表示高于样本平均水平。
+- 痛点触发率 = 该类痛点提及次数 / 该锚点总提及次数，用于避免高热度地点天然放大风险。
+- 分类阈值取 0 为界，是报告"相对比较"口径的直接复现，不表示绝对水平。

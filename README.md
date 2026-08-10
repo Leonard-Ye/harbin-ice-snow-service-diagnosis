@@ -42,6 +42,17 @@ python 31_v22_05_chart_generator.py         # 生成 8 张核心诊断图 → ..
 >
 > `V30_Multi_Source_Fusion_R2/` 下的**聚合结果 CSV 已入库**，可直接用于 `31` 图表生成与下游展示，无需原始数据。
 
+## 交互式 Dashboard
+
+基于 V30 聚合数据的 Streamlit 单页应用（锚点地图 / 指标筛选 / 单锚点诊断），数据不含原始评论，可直接公开部署：
+
+```powershell
+pip install -r requirements.txt
+streamlit run 05_streamlit_dashboard/app.py
+```
+
+详见 `05_streamlit_dashboard/README.md`（含 Streamlit Cloud 免费部署步骤）。
+
 ## 可选：GIS 制图
 
 `32_v22_06_spatial_maps.py` / `36` / `41` / `42` 生成报告中的 GIS 空间分布图（高德瓦片底图 + 锚点叠加）。

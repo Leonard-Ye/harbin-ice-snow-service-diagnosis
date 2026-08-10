@@ -7,3 +7,8 @@ matplotlib>=3.7
 seaborn>=0.13
 adjustText>=1.0
 requests>=2.31
+
+# Dashboard（05_streamlit_dashboard/app.py）
+streamlit>=1.40
+plotly>=5.20
+pydeck>=0.9
