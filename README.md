@@ -77,7 +77,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 
 ## 已知事项（诚实声明）
 
-1. **SSI 口径差异**：代码实际纳入六类设施（含购物、医疗），结题报告正文表述为四类主类——该差异待统一（见 Issue 候选）。
+1. **SSI 口径差异**：代码实际纳入六类设施（含购物、医疗），结题报告正文表述为四类主类——该差异待统一。
 2. 用当前 seaborn 版本重跑 `31` 时，`supply_demand_quadrant.png` 布局与报告版本存在细微差异（库版本所致）。
 3. 大众点评入样样本为"评分 ≥ 3.5 且经营 ≥ 3 年"子集，存在幸存者偏差，因此仅作为**压力验证层**而非全域供给主来源。
 4. 20 个核心锚点由人工白名单复核产出（见 `30` 脚本 `WHITELIST_ANCHORS` / `ALIAS_MAP`），2 个高频打卡 POI 因坐标异常被剔除。
