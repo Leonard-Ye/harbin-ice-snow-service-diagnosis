@@ -1,0 +1,8 @@
+﻿supply_dimension,primary_data_source,secondary_validation_source,avoid_double_count_strategy
+住宿服务供给 (Accommodation),携程住宿 POI (5871条),高德住宿 POI,SSI 计算中仅使用携程数据，剔除高德住宿，防止重叠计算。
+餐饮服务供给 (Dining),高德餐饮 POI (050000),大众点评,高德提供物理点位数量；大众点评不作为点位计数，仅作为排队/价格/体验压力的旁证属性。
+交通设施供给 (Transport),高德交通设施 POI (150000),无,独家采用高德底图。
+公共设施供给 (Public),高德公共设施 POI (200000),无,独家采用高德底图。
+医疗保健供给 (Medical),高德医疗保健 POI (090000) [待扩充],无,用于防寒/急救痛点的对应供给。
+购物与保暖供给 (Shopping),高德购物服务 POI (060000) [待扩充],无,用于购买防寒物资的供给对应。
+体育休闲与洗浴 (Leisure),高德体育休闲 POI (080000) [待扩充],无,东北特色回血设施。

@@ -1,0 +1,6 @@
+# 可选：GIS 制图脚本依赖（32/36/41/42，需要联网获取地图瓦片）
+# 安装: pip install -r requirements-gis.txt
+geopandas>=0.14
+contextily>=1.5
+pyproj>=3.6
+Pillow>=10.0
