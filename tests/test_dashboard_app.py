@@ -83,3 +83,23 @@ def test_histogram_no_cramped_box(app):
     src = open(APP_PATH, encoding="utf-8").read()
     assert 'marginal="box"' not in src
     assert "height=460" in src
+
+
+def test_no_emoji_in_ui(app):
+    """界面不应出现 emoji（雪花/天平/齿轮等），改用文字或 Material 图标。"""
+    import re
+
+    src = open(APP_PATH, encoding="utf-8").read()
+    emojis = re.findall(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]", src)
+    assert not emojis, f"残留 emoji: {[hex(ord(e)) for e in emojis]}"
+    assert "❄️" not in src and "⚖️" not in src
+    assert ":material/" in src  # 用 Material 图标替代
+
+
+def test_overview_layout_gives_side_column_space(app):
+    """总览页右栏（SMI Top10）需有足够宽度，列比 [3,2] 而非 [7,3]。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "col_map, col_side = st.columns([3, 2])" in src
+    # SMI 排名图标题精简（防窄栏截断），说明移到 caption
+    assert 'title="SMI 服务错配排名 Top 10"' in src
+    assert "SMI = z(DHI) + z(ERI) − z(SSI)" in src

@@ -32,7 +32,7 @@ from src.detectors.anomaly_detector import AnomalyDetector
 from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
 import ui_theme
 
-st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", page_icon="❄️", layout="wide")
+st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", layout="wide")
 
 
 # ---------------------------------------------------------------- 数据
@@ -43,7 +43,7 @@ def get_data(method: str) -> pd.DataFrame:
 
 with st.sidebar:
     st.header("分析配置")
-    st.caption("右上角 **⚙ 设置 → Theme** 可切换深/浅主题")
+    st.caption("右上角 **设置菜单 → Theme** 可切换深/浅主题")
     st.divider()
     method = st.radio(
         "指标权重方案",
@@ -150,11 +150,11 @@ def smi_rank_chart(data: pd.DataFrame) -> go.Figure:
         )
     )
     fig.update_layout(
-        title="SMI 服务错配指数排名（高=相对错配更突出）",
+        title="SMI 服务错配排名 Top 10",
         xaxis_title="SMI",
         yaxis_title="",
         height=560,
-        margin=dict(l=10, r=30, t=45, b=10),
+        margin=dict(l=10, r=30, t=40, b=10),
         template=_TPL,
     )
     return fig
@@ -241,7 +241,7 @@ def diagnosis_badge(diagnosis: str) -> str:
 
 
 # ---------------------------------------------------------------- 页面
-st.title("❄️ 哈尔滨冰雪旅游服务设施供需诊断")
+st.title("哈尔滨冰雪旅游服务设施供需诊断")
 st.markdown(
     '<p class="hero-sub">多源异构数据融合（高德 / 携程 / 大众点评 / 小红书）· '
     "20 核心文旅锚点 · 5 项自研指标 · 空间供需错配诊断</p>",
@@ -357,7 +357,7 @@ with tab_overview:
     )
     sub = df[df["diagnosis"].isin(sel_types)] if sel_types else df
 
-    col_map, col_side = st.columns([7, 3])
+    col_map, col_side = st.columns([3, 2])
     with col_map:
         st.subheader("核心锚点空间格局")
         st.caption("气泡大小 = DHI 需求热度；颜色 = 诊断类型；点击气泡联动「单锚点诊断」")
@@ -374,6 +374,7 @@ with tab_overview:
     with col_side:
         st.subheader("SMI 错配 Top 10")
         st.plotly_chart(smi_rank_chart(sub.head(10)), width="stretch")
+        st.caption("SMI = z(DHI) + z(ERI) − z(SSI)，正值越高表示需求与风险叠加、供给相对不足越突出。")
 
     # 核心发现
     st.subheader("核心发现")
@@ -581,7 +582,9 @@ def outlier_chart(scale3: pd.DataFrame, col: str) -> go.Figure:
 
 
 with tab_quality:
-    with st.expander("⚖️ 指标权重方案对比（等权 vs 熵权）", expanded=False):
+    with st.expander(
+        "指标权重方案对比（等权 vs 熵权）", expanded=False, icon=":material/balance:"
+    ):
         st.caption(
             f"当前应用使用 **{'等权（报告基线口径）' if method == 'equal' else '熵权法（数据驱动）'}**。"
             "等权为原报告口径；熵权法按 20 锚点样本离散度客观赋权，避免人为等权带来的主观性。"
