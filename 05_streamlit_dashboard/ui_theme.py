@@ -25,6 +25,8 @@ DARK = {
     "metric_border": "1px solid rgba(79,195,247,0.28)",
     "card_bg": "rgba(28,35,48,0.75)",
     "card_border": "1px solid rgba(255,255,255,0.08)",
+    "hero_gradient": "linear-gradient(180deg, rgba(79,195,247,0.16), rgba(79,195,247,0.04) 55%, rgba(0,0,0,0))",
+    "hero_border": "1px solid rgba(79,195,247,0.22)",
 }
 
 LIGHT = {
@@ -41,6 +43,8 @@ LIGHT = {
     "metric_border": "1px solid rgba(21,101,192,0.20)",
     "card_bg": "rgba(255,255,255,0.90)",
     "card_border": "1px solid rgba(0,0,0,0.06)",
+    "hero_gradient": "linear-gradient(180deg, rgba(21,101,192,0.08), rgba(21,101,192,0.02) 55%, rgba(0,0,0,0))",
+    "hero_border": "1px solid rgba(21,101,192,0.14)",
 }
 
 THEMES = {"dark": DARK, "light": LIGHT}
@@ -123,10 +127,10 @@ def plotly_template(theme: str) -> go.layout.Template:
 
 
 def apply_theme(theme: str) -> None:
-    """注入组件级 CSS（内容卡片/KPI 视觉增强）。
+    """注入组件级 CSS（内容卡片/KPI 视觉增强 + 背景分区）。
 
     遵循官方最佳实践：全局背景/文字/控件颜色由 .streamlit/config.toml 原生主题
-    接管，此处**只**负责自定义组件（insight-card、KPI 渐变卡）的视觉效果。
+    接管，此处**只**负责自定义组件的视觉效果（hero 渐变、区块卡片、色条标题）。
     """
     t = THEMES[theme]
     css = f"""
@@ -145,6 +149,30 @@ def apply_theme(theme: str) -> None:
     .insight-card .title {{ font-size: 15px; font-weight: 600; margin: 4px 0; }}
     .insight-card .body {{ font-size: 13px; color: {t['text']}; line-height: 1.6; }}
     .hero-sub {{ color: {t['muted']}; font-size: 14px; margin-top: -6px; }}
+    /* ---- 背景分区：hero 渐变 / 区块卡片 / 色条标题 ---- */
+    .st-key-hero {{
+        background: {t['hero_gradient']};
+        border: {t['hero_border']};
+        border-radius: 14px;
+        padding: 20px 24px 12px;
+        margin-bottom: 8px;
+    }}
+    .st-key-insights {{
+        background: {t['card_bg']};
+        border: {t['card_border']};
+        border-radius: 12px;
+        padding: 10px 18px 14px;
+        margin-top: 10px;
+    }}
+    .section-title {{
+        display: flex; align-items: center; gap: 8px;
+        font-size: 15px; font-weight: 600; color: {t['text']};
+        margin: 16px 0 10px;
+    }}
+    .section-title::before {{
+        content: ""; width: 4px; height: 16px; border-radius: 2px;
+        background: {t['accent']};
+    }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)

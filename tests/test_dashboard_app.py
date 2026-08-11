@@ -140,7 +140,7 @@ def test_first_screen_has_conclusions_before_tabs(app):
 def test_no_duplicate_insights(app):
     """核心结论全局唯一（首屏一份，总览页无重复）。"""
     src = open(APP_PATH, encoding="utf-8").read()
-    assert src.count("st.subheader(\"核心结论\")") == 1
+    assert src.count('<div class="section-title">核心结论</div>') == 1
     # 导出按钮 key 唯一
     assert src.count('key="dl_excel"') == 1 and src.count('key="dl_html"') == 1
 
@@ -162,3 +162,15 @@ def test_tab_guide_present(app):
     """tabs 下方应有页签导览（标注各页适用人群）。"""
     src = open(APP_PATH, encoding="utf-8").read()
     assert "页签导览" in src
+
+
+def test_background_zoning_present(app):
+    """页面应有背景分区（hero 渐变容器 + 区块标题色条 + 导出卡片），建立视觉重心。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert 'with st.container(border=True, key="hero")' in src, "hero 渐变容器缺失"
+    assert 'key="export"' in src, "导出卡片容器缺失"
+    assert 'class="section-title"' in src, "色条区块标题缺失"
+    theme_src = open(os.path.join(ROOT, "05_streamlit_dashboard", "ui_theme.py"), encoding="utf-8").read()
+    assert "hero_gradient" in theme_src, "ui_theme 缺少 hero 渐变"
+    assert ".st-key-hero" in theme_src and ".st-key-insights" in theme_src
+    assert ".section-title" in theme_src

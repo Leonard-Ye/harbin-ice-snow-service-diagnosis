@@ -241,18 +241,19 @@ def diagnosis_badge(diagnosis: str) -> str:
 
 
 # ---------------------------------------------------------------- 页面
-st.title("哈尔滨冰雪旅游服务设施供需诊断")
-st.markdown(
-    '<p class="hero-sub">用 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）找出'
-    "哈尔滨冰雪旅游<b>哪里缺服务、哪里挤爆了</b>，对 20 个核心文旅锚点给出分区优化策略</p>",
-    unsafe_allow_html=True,
-)
+with st.container(border=True, key="hero"):
+    st.title("哈尔滨冰雪旅游服务设施供需诊断")
+    st.markdown(
+        '<p class="hero-sub">用 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）找出'
+        "哈尔滨冰雪旅游<b>哪里缺服务、哪里挤爆了</b>，对 20 个核心文旅锚点给出分区优化策略</p>",
+        unsafe_allow_html=True,
+    )
 
-kpi_cols = st.columns(4)
-kpi_cols[0].metric("数据源", "4 类异构", "高德·携程·点评·小红书")
-kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
-kpi_cols[2].metric("核心锚点", "20 个", "人工白名单复核")
-kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
+    kpi_cols = st.columns(4)
+    kpi_cols[0].metric("数据源", "4 类异构", "高德·携程·点评·小红书")
+    kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
+    kpi_cols[2].metric("核心锚点", "20 个", "人工白名单复核")
+    kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
 
 # ---- 数据质量审计（供数据质量页签与导出复用）----
 AUDIT_COLS = SUPPLY_COLS + ["xhs_mentions", "dp_review_count"] + PAIN_RATE_COLS
@@ -330,7 +331,7 @@ th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px
 
 
 # ---- 核心结论（首屏，HR 30 秒看懂）----
-st.subheader("核心结论")
+st.markdown('<div class="section-title">核心结论</div>', unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
 c1.markdown(
     '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
@@ -355,26 +356,27 @@ c3.markdown(
 )
 
 # ---- 一键导出（首屏显眼位置）----
-dl1, dl2 = st.columns(2)
-with dl1:
-    st.download_button(
-        "导出指标明细 Excel",
-        icon=":material/download:",
-        data=build_excel_bytes(df, weights_comparison_df()),
-        file_name=f"harbin_diagnosis_{method}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="dl_excel",
-    )
-with dl2:
-    st.download_button(
-        "导出诊断报告 HTML",
-        icon=":material/description:",
-        data=build_html_summary(df),
-        file_name=f"harbin_diagnosis_{method}.html",
-        mime="text/html",
-        key="dl_html",
-    )
-st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
+with st.container(border=True, key="export"):
+    dl1, dl2 = st.columns(2)
+    with dl1:
+        st.download_button(
+            "导出指标明细 Excel",
+            icon=":material/download:",
+            data=build_excel_bytes(df, weights_comparison_df()),
+            file_name=f"harbin_diagnosis_{method}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_excel",
+        )
+    with dl2:
+        st.download_button(
+            "导出诊断报告 HTML",
+            icon=":material/description:",
+            data=build_html_summary(df),
+            file_name=f"harbin_diagnosis_{method}.html",
+            mime="text/html",
+            key="dl_html",
+        )
+    st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
 
 with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/menu_book:"):
     st.markdown(
