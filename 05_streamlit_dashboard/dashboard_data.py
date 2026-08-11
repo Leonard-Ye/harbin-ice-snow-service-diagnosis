@@ -5,10 +5,16 @@
 数据来源：02_多源融合数据及核心脚本/V30_Multi_Source_Fusion_R2/*.csv
 """
 import os
+import sys
 
 import pandas as pd
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.engines.metrics_engine import MetricsEngine  # noqa: E402
+
 DATA_DIR = os.path.join(PROJECT_ROOT, "02_多源融合数据及核心脚本", "V30_Multi_Source_Fusion_R2")
 
 INDEX_FILE = os.path.join(DATA_DIR, "anchor_index_v22_04R2.csv")
@@ -47,9 +53,14 @@ def load_scale() -> pd.DataFrame:
     return pd.read_csv(SCALE_FILE, encoding="utf-8-sig")
 
 
-def full_table() -> pd.DataFrame:
-    """合并锚点主表 + 五指标 + 小红书需求风险 + 大众点评压力，返回单表。"""
-    idx = load_index()
+def full_table(method: str = "equal") -> pd.DataFrame:
+    """合并锚点主表 + 五指标 + 小红书需求风险 + 大众点评压力，返回单表。
+
+    五指标由 MetricsEngine 计算（method="equal" 与 30 脚本口径逐值一致；
+    method="entropy" 为熵权法客观赋权），对外列结构与早期版本完全一致。
+    """
+    engine = MetricsEngine(method=method)
+    idx = engine.compute_metrics(load_scale(), scale_km=engine.main_scale)
     master = load_master()[["anchor_name", "anchor_id", "confidence"]]
     xhs = load_xhs_risk()
     dp = load_dp()
@@ -57,6 +68,16 @@ def full_table() -> pd.DataFrame:
     df = df.merge(xhs, on="anchor_name", how="left")
     df = df.merge(dp, on="anchor_name", how="left")
     return df
+
+
+def get_weight_sets(method: str = "equal") -> dict:
+    """返回指定权重方案的三组指标权重（供 Dashboard 对比展示）。"""
+    return MetricsEngine(method=method).get_weights(load_scale())
+
+
+def get_scale_profile() -> pd.DataFrame:
+    """多尺度（1/3/5km）供给概览，供数据质量页签使用。"""
+    return MetricsEngine().compute_scale_profile(load_scale())
 
 
 def classify_anchor(dhi: float, ssi: float, eri: float) -> str:

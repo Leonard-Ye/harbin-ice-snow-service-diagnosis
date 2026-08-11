@@ -4,8 +4,11 @@
 运行: streamlit run 05_streamlit_dashboard/app.py
 数据: 02_多源融合数据及核心脚本/V30_Multi_Source_Fusion_R2/*.csv（聚合结果，不含原始评论/笔记）
 """
+import io
+import json
 import os
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,19 +22,39 @@ from dashboard_data import (
     PAIN_COLS,
     add_diagnosis,
     full_table,
+    get_scale_profile,
+    get_weight_sets,
+    load_scale,
     strategy_for,
 )
+from src.detectors.anomaly_detector import AnomalyDetector
+from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
 
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", page_icon="❄️", layout="wide")
 
 
 # ---------------------------------------------------------------- 数据
 @st.cache_data(show_spinner="加载 V30 多源融合聚合结果 ...")
-def get_data() -> pd.DataFrame:
-    return add_diagnosis(full_table())
+def get_data(method: str) -> pd.DataFrame:
+    return add_diagnosis(full_table(method=method))
 
 
-df = get_data()
+with st.sidebar:
+    st.header("分析配置")
+    method = st.radio(
+        "指标权重方案",
+        ["equal", "entropy"],
+        index=0,
+        format_func=lambda m: "等权（报告基线口径）" if m == "equal" else "熵权法（数据驱动）",
+        help="equal = 等权，与结题报告口径逐值一致；entropy = 熵权法，按 20 锚点样本离散度客观赋权。",
+    )
+    st.caption(
+        "熵权法：min-max 归一化 → 信息熵 → 差异系数 → 权重。"
+        "离散度大（信息量大）的维度获得更高权重；常数列权重为 0。"
+    )
+
+
+df = get_data(method)
 
 st.markdown(
     """
@@ -194,7 +217,102 @@ kpi_cols[1].metric("记录规模", "8 万+ 条")
 kpi_cols[2].metric("核心锚点", "20 个")
 kpi_cols[3].metric("自研指标", "5 项")
 
-tab_overview, tab_explore, tab_anchor = st.tabs(["总览地图", "指标筛选与象限", "单锚点诊断"])
+# ---- 数据质量审计（供数据质量页签与导出复用）----
+AUDIT_COLS = SUPPLY_COLS + ["xhs_mentions", "dp_review_count"] + PAIN_RATE_COLS
+LOG_COLS = SUPPLY_COLS + ["xhs_mentions", "dp_review_count"]  # 右偏数量列
+
+
+def weights_comparison_df() -> pd.DataFrame:
+    w_eq = get_weight_sets("equal")
+    w_cur = get_weight_sets(method)
+    grp_cn = {"supply": "SSI 服务供给", "eri": "ERI 体验风险", "dp": "ERI_plus 餐饮压力"}
+    rows = []
+    for grp in ["supply", "eri", "dp"]:
+        for k in w_eq[grp]:
+            rows.append(
+                {
+                    "指标组": grp_cn[grp],
+                    "维度": k,
+                    "等权": w_eq[grp][k],
+                    "当前方案": w_cur[grp][k],
+                }
+            )
+    dfw = pd.DataFrame(rows)
+    dfw["差异"] = (dfw["当前方案"] - dfw["等权"]).round(4)
+    return dfw
+
+
+def build_audit_df() -> pd.DataFrame:
+    scale3 = load_scale()
+    scale3 = scale3[scale3["scale_km"] == 3].copy()
+    audit = AnomalyDetector().quality_report(scale3, AUDIT_COLS, log_transform=LOG_COLS)
+    audit["iqr_outliers"] = audit["iqr_outliers"].apply(
+        lambda x: "、".join(x) if x else "—"
+    )
+    audit["zscore_outliers"] = audit["zscore_outliers"].apply(
+        lambda x: "、".join(x) if x else "—"
+    )
+    return audit
+
+
+def build_excel_bytes(df: pd.DataFrame, wdf: pd.DataFrame) -> bytes:
+    """打包指标明细/数据质量审计/指标权重 为多 sheet Excel。"""
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        df[["anchor_name", "mismatch_rank", "diagnosis"] + INDEX_COLS].to_excel(
+            writer, sheet_name="指标明细", index=False
+        )
+        build_audit_df().to_excel(writer, sheet_name="数据质量审计", index=False)
+        wdf.to_excel(writer, sheet_name="指标权重", index=False)
+    return buf.getvalue()
+
+
+def build_html_summary(df: pd.DataFrame) -> str:
+    """生成诊断报告 HTML 摘要（锚点排名 + 诊断分布 + 口径说明）。"""
+    rows = "".join(
+        f"<tr><td>{i}</td><td>{r.anchor_name}</td><td>{r.SMI:.2f}</td>"
+        f"<td>{r.DHI:.2f}</td><td>{r.SSI:.2f}</td><td>{r.ERI:.2f}</td>"
+        f"<td>{r.diagnosis}</td></tr>"
+        for i, r in df.head(10).iterrows()
+    )
+    dist = df["diagnosis"].value_counts().to_dict()
+    dist_html = "".join(f"<li>{k}: {v} 个锚点</li>" for k, v in dist.items())
+    return f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>哈尔滨冰雪旅游服务设施供需诊断报告</title>
+<style>body{{font-family:'Microsoft YaHei',sans-serif;margin:24px;}}
+table{{border-collapse:collapse;width:100%;}} th,td{{border:1px solid #ccc;padding:6px 10px;font-size:13px;}}
+th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px;}}</style>
+</head><body>
+<h1>哈尔滨冰雪旅游服务设施供需诊断报告（Top 10 错配锚点）</h1>
+<p>权重方案：{'等权（报告基线口径）' if method == 'equal' else '熵权法（数据驱动）'}　|　生成时间：{pd.Timestamp.now():%Y-%m-%d %H:%M}</p>
+<table><tr><th>排名</th><th>锚点</th><th>SMI</th><th>DHI</th><th>SSI</th><th>ERI</th><th>诊断类型</th></tr>{rows}</table>
+<h2>诊断类型分布</h2><ul>{dist_html}</ul>
+<p class="note">口径说明：所有指标为 20 个核心锚点样本内 Z-score 相对值（0=样本均值），SMI = z(DHI)+z(ERI)−z(SSI)。数据为聚合统计，不含任何原始评论。</p>
+</body></html>"""
+
+
+download_cols = st.columns(2)
+with download_cols[0]:
+    st.download_button(
+        "📥 导出指标明细 Excel",
+        data=build_excel_bytes(df, weights_comparison_df()),
+        file_name=f"harbin_diagnosis_{method}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="dl_excel",
+    )
+with download_cols[1]:
+    st.download_button(
+        "📄 导出诊断报告 HTML",
+        data=build_html_summary(df),
+        file_name=f"harbin_diagnosis_{method}.html",
+        mime="text/html",
+        key="dl_html",
+    )
+st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
+
+tab_overview, tab_explore, tab_anchor, tab_quality = st.tabs(
+    ["总览地图", "指标筛选与象限", "单锚点诊断", "数据质量"]
+)
 
 # ---- Tab 1 总览 ----
 with tab_overview:
@@ -296,4 +414,109 @@ with tab_anchor:
         "注：DHI/SSI/ERI/SMI 为 20 锚点样本内 Z-score 相对值（0=样本均值）；"
         "痛点触发率 = 该类痛点提及次数 / 该锚点总提及次数；负面情绪占比为平滑后比例。"
         "本页指标为聚合统计，不含任何原始评论文本。"
+    )
+
+# ---- Tab 4 数据质量 ----
+
+
+def outlier_chart(scale3: pd.DataFrame, col: str) -> go.Figure:
+    det = AnomalyDetector()
+    s = scale3[col]
+    if col in LOG_COLS:
+        # 右偏列：在 log1p 空间检测离群，参考线映射回原始值
+        s_log = np.log1p(s.clip(lower=0))
+        mask = det.detect_outliers_iqr(scale3.assign(**{col: s_log}), col)
+        q1l, q3l = s_log.quantile(0.25), s_log.quantile(0.75)
+        iqrl = q3l - q1l
+        lo = float(np.expm1(q1l - 1.5 * iqrl))
+        hi = float(np.expm1(q3l + 1.5 * iqrl))
+        note = "（log1p 空间检测，参考线已映射回原始值）"
+    else:
+        mask = det.detect_outliers_iqr(scale3, col)
+        q1, q3 = s.quantile(0.25), s.quantile(0.75)
+        iqr = q3 - q1
+        lo, hi = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+        note = ""
+    d = scale3.copy()
+    d["is_outlier"] = mask.map({True: "IQR 离群", False: "正常"})
+    fig = px.scatter(
+        d,
+        x="anchor_name",
+        y=col,
+        color="is_outlier",
+        color_discrete_map={"IQR 离群": "#d62728", "正常": "#1f77b4"},
+        hover_name="anchor_name",
+    )
+    fig.add_hline(y=lo, line_dash="dot", line_color="gray", annotation_text="IQR 下界")
+    fig.add_hline(y=hi, line_dash="dot", line_color="gray", annotation_text="IQR 上界")
+    fig.update_layout(
+        title=f"{col} — 锚点分布与 IQR 离群标注 {note}",
+        xaxis_title="",
+        yaxis_title="原始值",
+        height=420,
+        xaxis=dict(tickangle=45),
+        legend_title="",
+    )
+    return fig
+
+
+with tab_quality:
+    st.subheader("指标权重方案对比")
+    st.caption(
+        f"当前应用使用 **{'等权（报告基线口径）' if method == 'equal' else '熵权法（数据驱动）'}**。"
+        "等权为原报告口径；熵权法按 20 锚点样本离散度客观赋权，避免人为等权带来的主观性。"
+    )
+    wdf = weights_comparison_df()
+    fig_w = px.bar(
+        wdf,
+        x="维度",
+        y=["等权", "当前方案"],
+        barmode="group",
+        facet_col="指标组",
+        facet_col_wrap=3,
+        color_discrete_sequence=["#9ecae1", "#d62728"],
+    )
+    fig_w.update_layout(height=320, legend_title="权重方案")
+    st.plotly_chart(fig_w, width="stretch")
+    st.dataframe(
+        wdf[wdf["当前方案"] != wdf["等权"]].round(4) if method != "equal" else wdf.round(4),
+        width="stretch",
+        hide_index=True,
+    )
+
+    st.divider()
+    st.subheader("数据质量审计（IQR / Z-score 离群检测）")
+    scale3 = load_scale()
+    scale3 = scale3[scale3["scale_km"] == 3].copy()
+    audit = build_audit_df()
+    st.dataframe(
+        audit[
+            ["column", "n", "missing_rate", "n_outliers", "iqr_outliers", "zscore_outliers"]
+        ],
+        width="stretch",
+        hide_index=True,
+    )
+    st.caption(
+        "右偏数量列（设施数量/评论量）经 log1p 变换后再检测，避免 IQR 下界为负导致低端离群漏检。"
+        "典型发现：伏尔加庄园在住宿/餐饮/交通/公共/购物/医疗六类供给上均为离群低值（远郊设施不足）；"
+        "果戈里大街排队痛点触发率为离群高值。"
+    )
+
+    col_pick = st.selectbox("离群可视化维度", AUDIT_COLS, index=AUDIT_COLS.index("ctrip_lodging_count"))
+    st.plotly_chart(outlier_chart(scale3, col_pick), width="stretch")
+
+    st.divider()
+    st.subheader("多尺度供给稳定性（1km / 3km / 5km）")
+    prof = get_scale_profile()
+    pivot = prof.pivot(index="anchor_name", columns="scale_km", values="supply_total").reset_index()
+    pivot.columns = ["anchor_name"] + [f"{c}km" for c in pivot.columns[1:]]
+    pivot["1→3km 增幅"] = ((pivot["3km"] - pivot["1km"]) / pivot["1km"].replace(0, pd.NA) * 100).round(1)
+    st.dataframe(
+        pivot.sort_values("1→3km 增幅", ascending=False).round(0),
+        width="stretch",
+        hide_index=True,
+    )
+    st.caption(
+        "锚点在 1km 近场与 3km 短途服务圈的供给总量变化。增幅大说明服务依赖 3km 圈层（近场供给弱），"
+        "是缓冲半径选择敏感性的直接证据。"
     )

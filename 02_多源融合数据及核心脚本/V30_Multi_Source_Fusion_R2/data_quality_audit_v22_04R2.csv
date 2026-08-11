@@ -1,0 +1,13 @@
+﻿column,n,missing,missing_rate,iqr_outliers,zscore_outliers,iqr_lower,iqr_upper,flag,n_outliers
+amap_dining_count,20,0,0.0,"[""冰雪大世界"", ""松花江"", ""伏尔加庄园""]",[],-1596.25,5147.75,True,3
+amap_shopping_count,20,0,0.0,"[""冰雪大世界"", ""松花江"", ""伏尔加庄园""]",[],-1902.75,5499.25,True,3
+ctrip_lodging_count,20,0,0.0,"[""松花江"", ""伏尔加庄园""]",[],-1220.25,2699.75,True,2
+amap_transport_count,20,0,0.0,"[""松花江"", ""伏尔加庄园""]","[""伏尔加庄园""]",-1403.875,4183.125,True,2
+amap_medical_count,20,0,0.0,"[""松花江"", ""伏尔加庄园""]",[],-1936.5,4143.5,True,2
+amap_public_count,20,0,0.0,"[""伏尔加庄园""]","[""伏尔加庄园""]",-93.875,457.125,True,1
+queue_pain_rate,20,0,0.0,"[""果戈里大街""]",[],-0.0042,0.0271,True,1
+xhs_mentions,20,0,0.0,[],[],-202.0,444.0,False,0
+dp_review_count,20,0,0.0,[],[],-517.125,861.875,False,0
+traffic_pain_rate,20,0,0.0,[],[],-0.0096,0.0298,False,0
+cold_pain_rate,20,0,0.0,[],[],-0.0038,0.0283,False,0
+price_pain_rate,20,0,0.0,[],[],-0.01,0.0306,False,0
