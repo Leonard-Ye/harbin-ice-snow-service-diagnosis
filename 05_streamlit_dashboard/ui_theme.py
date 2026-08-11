@@ -68,14 +68,23 @@ TYPE_COLORS = {
 
 
 def get_theme() -> str:
-    """读取当前主题（session_state 持久化，默认 dark）。"""
-    if "ui_theme" not in st.session_state:
-        st.session_state["ui_theme"] = "dark"
-    return st.session_state["ui_theme"]
+    """读取当前主题（Streamlit 原生，跟随设置菜单/系统偏好）。
+
+    全局颜色由 .streamlit/config.toml 的 [theme.light]/[theme.dark] 接管，
+    这里只读取值以驱动 Plotly 模板与图表语义配色。
+    """
+    try:
+        theme = st.context.theme.type  # "light" | "dark"
+        return theme if theme in ("dark", "light") else "light"
+    except Exception:
+        return "light"
 
 
 def set_theme(theme: str) -> None:
-    st.session_state["ui_theme"] = theme
+    """原生主题由设置菜单控制，不可程序化设置；保留占位以防误用。"""
+    raise NotImplementedError(
+        "Streamlit 原生主题不可程序化切换，请在右上角 ⚙ 设置 → Theme 中切换。"
+    )
 
 
 def type_colors(theme: str) -> dict:
@@ -107,31 +116,18 @@ def plotly_template(theme: str) -> go.layout.Template:
 
 
 def apply_theme(theme: str) -> None:
-    """注入主题 CSS（覆盖 Streamlit 默认样式）。"""
+    """注入组件级 CSS（内容卡片/KPI 视觉增强）。
+
+    遵循官方最佳实践：全局背景/文字/控件颜色由 .streamlit/config.toml 原生主题
+    接管，此处**只**负责自定义组件（insight-card、KPI 渐变卡）的视觉效果。
+    """
     t = THEMES[theme]
-    if theme == "dark":
-        extra = f"""
-        [data-testid="stSidebar"] {{ background: {t['panel']}; }}
-        .stTabs [data-baseweb="tab-list"] {{ gap: 4px; }}
-        .stTabs [data-baseweb="tab"] {{
-            background: {t['panel']}; border-radius: 8px 8px 0 0;
-            padding: 8px 18px; }}
-        """
-    else:
-        extra = """
-        .stTabs [data-baseweb="tab"] { background: #fff; border-radius: 8px 8px 0 0; }
-        """
     css = f"""
     <style>
-    .stApp {{ background: {t['bg']}; color: {t['text']}; }}
-    [data-testid="stHeader"] {{ background: transparent; }}
-    h1, h2, h3, h4 {{ color: {t['text']}; }}
     [data-testid="stMetric"] {{
         background: {t['metric_bg']}; border: {t['metric_border']};
         border-radius: 12px; padding: 14px 18px;
     }}
-    [data-testid="stMetricLabel"] {{ color: {t['muted']}; }}
-    [data-testid="stMetricValue"] {{ color: {t['text']}; }}
     div[data-testid="stExpander"] {{ background: {t['card_bg']}; border: {t['card_border']};
         border-radius: 10px; }}
     .insight-card {{
@@ -142,8 +138,6 @@ def apply_theme(theme: str) -> None:
     .insight-card .title {{ font-size: 15px; font-weight: 600; margin: 4px 0; }}
     .insight-card .body {{ font-size: 13px; color: {t['text']}; line-height: 1.6; }}
     .hero-sub {{ color: {t['muted']}; font-size: 14px; margin-top: -6px; }}
-    .kpi-note {{ color: {t['muted']}; font-size: 12px; margin-top: 2px; }}
-    {extra}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)

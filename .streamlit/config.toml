@@ -1,0 +1,52 @@
+# Streamlit 原生主题（官方推荐做法：主题走 config.toml，不用 CSS 覆盖）
+# 深/浅双模式：右上角 ⚙ 设置 → Theme 可切换；st.context.theme.type 可读当前模式
+# 深色：冰雪大屏风（参考官方 Nord 模板，主色改冰蓝）
+# 浅色：清爽冰雪风
+
+[theme]
+base = "dark"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 14
+baseFontWeight = 400
+linkUnderline = false
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "10px"
+buttonRadius = "10px"
+# 诊断类型语义色（红=设施不足/橙=高峰承载/紫=局部风险/绿=分流承接/蓝=均衡/灰=监测）
+chartCategoricalColors = ["#EF5350", "#FFA726", "#AB47BC", "#66BB6A", "#42A5F5", "#90A4AE"]
+
+[theme.light]
+primaryColor = "#1565C0"
+backgroundColor = "#F7F9FC"
+secondaryBackgroundColor = "#EDF2F7"
+codeBackgroundColor = "#EDF2F7"
+textColor = "#1F2937"
+linkColor = "#1565C0"
+borderColor = "#D9E2EC"
+codeTextColor = "#1F2937"
+headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [600, 600, 600, 600, 500, 500]
+
+[theme.light.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F4F8"
+borderColor = "#D9E2EC"
+
+[theme.dark]
+primaryColor = "#4FC3F7"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#161B22"
+codeBackgroundColor = "#161B22"
+textColor = "#E6E8EB"
+linkColor = "#4FC3F7"
+borderColor = "#2A3342"
+codeTextColor = "#E6E8EB"
+headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [600, 600, 600, 600, 500, 500]
+
+[theme.dark.sidebar]
+backgroundColor = "#161B22"
+secondaryBackgroundColor = "#1C2330"
+borderColor = "#2A3342"

@@ -42,15 +42,7 @@ def get_data(method: str) -> pd.DataFrame:
 
 with st.sidebar:
     st.header("分析配置")
-    theme_sel = st.radio(
-        "界面主题",
-        ["dark", "light"],
-        index=0,
-        format_func=lambda t: "深色（大屏）" if t == "dark" else "浅色（清爽）",
-        help="深色适合投屏演示；浅色适合日常阅读。",
-    )
-    ui_theme.set_theme(theme_sel)
-    theme = ui_theme.get_theme()
+    st.caption("💡 右上角 **⚙ 设置 → Theme** 可切换深/浅主题")
     st.divider()
     method = st.radio(
         "指标权重方案",
@@ -65,6 +57,7 @@ with st.sidebar:
     )
 
 
+theme = ui_theme.get_theme()
 ui_theme.apply_theme(theme)
 df = get_data(method)
 
