@@ -243,8 +243,8 @@ def diagnosis_badge(diagnosis: str) -> str:
 # ---------------------------------------------------------------- 页面
 st.title("哈尔滨冰雪旅游服务设施供需诊断")
 st.markdown(
-    '<p class="hero-sub">多源异构数据融合（高德 / 携程 / 大众点评 / 小红书）· '
-    "20 核心文旅锚点 · 5 项自研指标 · 空间供需错配诊断</p>",
+    '<p class="hero-sub">用 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）找出'
+    "哈尔滨冰雪旅游<b>哪里缺服务、哪里挤爆了</b>，对 20 个核心文旅锚点给出分区优化策略</p>",
     unsafe_allow_html=True,
 )
 
@@ -253,34 +253,6 @@ kpi_cols[0].metric("数据源", "4 类异构", "高德·携程·点评·小红�
 kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
 kpi_cols[2].metric("核心锚点", "20 个", "人工白名单复核")
 kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
-
-with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/menu_book:"):
-    st.markdown(
-        "#### 为什么做\n"
-        "哈尔滨冰雪旅游火爆，但服务设施存在空间失衡：景区周边供给不足、老城核心高峰承载压力大。"
-    )
-    st.markdown(
-        "#### 怎么做\n"
-        "将 4 类异构数据（设施点位 / 住宿 / 餐饮评论 / 舆情文本）通过 POI 锚点对齐"
-        "统一到 20 个核心锚点，构建 5 项自研诊断指标。"
-    )
-    st.markdown(
-        "#### 5 项自研指标怎么读\n"
-        "全部为 20 锚点样本内的相对值（Z-score，0 = 平均水平）：\n\n"
-        "| 指标 | 含义 | 数值大于 0 说明 |\n"
-        "|---|---|---|\n"
-        "| DHI 需求热度 | 小红书提及热度（log1p 压缩极端值） | 关注度高于平均 |\n"
-        "| SSI 服务供给 | 3km 内六类设施数量（住宿/餐饮/交通/公共/购物/医疗） | 周边服务更密集 |\n"
-        "| ERI 体验风险 | 负面情绪占比 + 交通/排队/防寒/价格痛点触发率 | 吐槽风险高于平均 |\n"
-        "| ERI_plus 餐饮压力 | 大众点评价格/排队/服务压力（核心餐饮锚点验证） | 餐饮消费压力更大 |\n"
-        "| SMI 服务错配 | z(DHI) + z(ERI) − z(SSI) | 需求与风险叠加、供给相对不足 |\n\n"
-        "注意：SMI 排名靠前不等于设施一定不够，需回到 DHI/SSI/ERI 分项判断驱动因素。"
-    )
-    st.markdown(
-        "#### 发现了什么\n"
-        "问题分三类：设施不足型（松花江 / 冰雪大世界 / 太阳岛，近场服务薄弱）；"
-        "高峰承载型（中央大街，设施不缺但拥挤排队）；局部风险型（果戈里大街排队压力）。"
-    )
 
 # ---- 数据质量审计（供数据质量页签与导出复用）----
 AUDIT_COLS = SUPPLY_COLS + ["xhs_mentions", "dp_review_count"] + PAIN_RATE_COLS
@@ -356,8 +328,88 @@ th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px
 </body></html>"""
 
 
+
+# ---- 核心结论（首屏，HR 30 秒看懂）----
+st.subheader("核心结论")
+c1, c2, c3 = st.columns(3)
+c1.markdown(
+    '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
+    '<div class="title">松花江 · 冰雪大世界 · 太阳岛</div>'
+    '<div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），'
+    "优先补短途接驳与防寒休憩设施。</div></div>",
+    unsafe_allow_html=True,
+)
+c2.markdown(
+    '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
+    '<div class="title">中央大街 · 圣索菲亚教堂</div>'
+    '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
+    "而非增加设施。</div></div>",
+    unsafe_allow_html=True,
+)
+c3.markdown(
+    '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
+    '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
+    '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
+    "承接核心区外溢的潜力。</div></div>",
+    unsafe_allow_html=True,
+)
+
+# ---- 一键导出（首屏显眼位置）----
+dl1, dl2 = st.columns(2)
+with dl1:
+    st.download_button(
+        "导出指标明细 Excel",
+        icon=":material/download:",
+        data=build_excel_bytes(df, weights_comparison_df()),
+        file_name=f"harbin_diagnosis_{method}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="dl_excel",
+    )
+with dl2:
+    st.download_button(
+        "导出诊断报告 HTML",
+        icon=":material/description:",
+        data=build_html_summary(df),
+        file_name=f"harbin_diagnosis_{method}.html",
+        mime="text/html",
+        key="dl_html",
+    )
+st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
+
+with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/menu_book:"):
+    st.markdown(
+        "#### 为什么做\n"
+        "哈尔滨冰雪旅游火爆，但服务设施存在空间失衡：景区周边供给不足、老城核心高峰承载压力大。"
+    )
+    st.markdown(
+        "#### 怎么做\n"
+        "将 4 类异构数据（设施点位 / 住宿 / 餐饮评论 / 舆情文本）通过 POI 锚点对齐"
+        "统一到 20 个核心锚点，构建 5 项自研诊断指标。"
+    )
+    st.markdown(
+        "#### 5 项自研指标怎么读\n"
+        "全部为 20 锚点样本内的相对值（Z-score，0 = 平均水平）：\n\n"
+        "| 指标 | 含义 | 数值大于 0 说明 |\n"
+        "|---|---|---|\n"
+        "| DHI 需求热度 | 小红书提及热度（log1p 压缩极端值） | 关注度高于平均 |\n"
+        "| SSI 服务供给 | 3km 内六类设施数量（住宿/餐饮/交通/公共/购物/医疗） | 周边服务更密集 |\n"
+        "| ERI 体验风险 | 负面情绪占比 + 交通/排队/防寒/价格痛点触发率 | 吐槽风险高于平均 |\n"
+        "| ERI_plus 餐饮压力 | 大众点评价格/排队/服务压力（核心餐饮锚点验证） | 餐饮消费压力更大 |\n"
+        "| SMI 服务错配 | z(DHI) + z(ERI) − z(SSI) | 需求与风险叠加、供给相对不足 |\n\n"
+        "注意：SMI 排名靠前不等于设施一定不够，需回到 DHI/SSI/ERI 分项判断驱动因素。"
+    )
+    st.markdown(
+        "#### 发现了什么\n"
+        "问题分三类：设施不足型（松花江 / 冰雪大世界 / 太阳岛，近场服务薄弱）；"
+        "高峰承载型（中央大街，设施不缺但拥挤排队）；局部风险型（果戈里大街排队压力）。"
+    )
+
 tab_overview, tab_explore, tab_anchor, tab_quality = st.tabs(
     ["总览地图", "指标筛选与象限", "单锚点诊断", "数据质量"]
+)
+st.caption(
+    "页签导览：总览（人人都能看懂）· 指标筛选（分析师向）· 单锚点诊断（深挖）· "
+    "数据质量（技术细节，评审向）。"
 )
 
 # ---- Tab 1 总览 ----
@@ -392,53 +444,6 @@ with tab_overview:
         st.subheader("SMI 错配 Top 10")
         st.plotly_chart(smi_rank_chart(sub.head(10)), width="stretch")
         st.caption("SMI = z(DHI) + z(ERI) − z(SSI)，正值越高表示需求与风险叠加、供给相对不足越突出。")
-
-    # 核心发现
-    st.subheader("核心发现")
-    c1, c2, c3 = st.columns(3)
-    c1.markdown(
-        '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
-        '<div class="title">松花江 · 冰雪大世界 · 太阳岛</div>'
-        '<div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），'
-        "优先补短途接驳与防寒休憩设施。</div></div>",
-        unsafe_allow_html=True,
-    )
-    c2.markdown(
-        '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
-        '<div class="title">中央大街 · 圣索菲亚教堂</div>'
-        '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
-        "而非增加设施。</div></div>",
-        unsafe_allow_html=True,
-    )
-    c3.markdown(
-        '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
-        '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
-        '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
-        "承接核心区外溢的潜力。</div></div>",
-        unsafe_allow_html=True,
-    )
-
-    # 一键导出
-    dl1, dl2 = st.columns(2)
-    with dl1:
-        st.download_button(
-            "导出指标明细 Excel",
-            icon=":material/download:",
-            data=build_excel_bytes(df, weights_comparison_df()),
-            file_name=f"harbin_diagnosis_{method}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="dl_excel",
-        )
-    with dl2:
-        st.download_button(
-            "导出诊断报告 HTML",
-            icon=":material/description:",
-            data=build_html_summary(df),
-            file_name=f"harbin_diagnosis_{method}.html",
-            mime="text/html",
-            key="dl_html",
-        )
-    st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
 
 # ---- Tab 2 指标筛选与象限 ----
 with tab_explore:
@@ -599,6 +604,10 @@ def outlier_chart(scale3: pd.DataFrame, col: str) -> go.Figure:
 
 
 with tab_quality:
+    st.caption(
+        "这一页证明数据可信、方法严谨：IQR/Z-score 离群检测、缺失审计与多尺度敏感性——"
+        "回答评审「数据经得起检验吗」。"
+    )
     with st.expander(
         "指标权重方案对比（等权 vs 熵权）", expanded=False, icon=":material/balance:"
     ):
@@ -660,3 +669,10 @@ with tab_quality:
         "锚点在 1km 近场与 3km 短途服务圈的供给总量变化。增幅大说明服务依赖 3km 圈层（近场供给弱），"
         "是缓冲半径选择敏感性的直接证据。"
     )
+
+# ---- 页脚 ----
+st.caption(
+    "数据说明：本应用基于 2026 年 6 月结题时的多源数据静态快照"
+    "（高德 / 携程 / 大众点评 / 小红书聚合统计，不含原始评论），"
+    "指标为 20 个核心锚点样本内相对值；默认熵权法（数据驱动），等权为报告基线口径可切换对照。"
+)

@@ -125,3 +125,40 @@ def test_narrative_no_markdown_asterisks(app):
 def test_entropy_is_default_weighting(app):
     """熵权法（数据驱动）应为默认权重方案，等权仅作对照。"""
     assert app.radio[0].value == "entropy", f"默认权重应为 entropy，实际 {app.radio[0].value}"
+
+
+def test_first_screen_has_conclusions_before_tabs(app):
+    """首屏（tab 之前）必须含核心结论，HR 打开即见。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    kpi_pos = src.index("kpi_cols = st.columns(4)")
+    tab_pos = src.index('st.tabs(\n    ["总览地图"')
+    between = src[kpi_pos:tab_pos]
+    assert "核心结论" in between, "核心结论应位于 KPI 与 tabs 之间（首屏）"
+    assert 'class="insight-card"' in between, "结论应为卡片形式"
+
+
+def test_no_duplicate_insights(app):
+    """核心结论全局唯一（首屏一份，总览页无重复）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert src.count("st.subheader(\"核心结论\")") == 1
+    # 导出按钮 key 唯一
+    assert src.count('key="dl_excel"') == 1 and src.count('key="dl_html"') == 1
+
+
+def test_quality_page_has_guide(app):
+    """数据质量页必须有"为什么看这页"导语（HR 视角解释技术页）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "这一页证明数据可信、方法严谨" in src
+
+
+def test_footer_has_data_timestamp(app):
+    """页脚必须有数据快照时间与口径说明（回答「数据多新」）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "2026 年 6 月结题时的多源数据静态快照" in src
+    assert "页脚" in src
+
+
+def test_tab_guide_present(app):
+    """tabs 下方应有页签导览（标注各页适用人群）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "页签导览" in src
