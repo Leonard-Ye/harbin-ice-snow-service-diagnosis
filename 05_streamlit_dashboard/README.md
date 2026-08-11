@@ -38,7 +38,9 @@ streamlit run app.py
 3. 配置：
    - **Main file path**: `05_streamlit_dashboard/app.py`
    - **Python version**: 3.11+（仓库默认即可）
-4. Deploy。依赖由 `requirements.txt` 自动安装（含 streamlit/plotly/pydeck）。
+4. Deploy。依赖由 `requirements.txt` 自动安装（含 streamlit/plotly/pydeck/openpyxl）。
+
+> **已部署过的应用**：工程化改造（新增「数据质量」页签、权重切换、一键导出）后，在应用页面的 **Deploy 菜单 → Rebuild**（或重新推送触发自动 rebuild）即可更新，无需重新创建 app。
 
 > 注意：仓库根目录即 Streamlit 的工作目录，`dashboard_data.py` 通过脚本相对位置推导数据路径，clone 后无需任何配置。
 
