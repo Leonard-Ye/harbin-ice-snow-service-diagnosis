@@ -29,6 +29,7 @@ from dashboard_data import (
 )
 from src.detectors.anomaly_detector import AnomalyDetector
 from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
+import ui_theme
 
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", page_icon="❄️", layout="wide")
 
@@ -41,6 +42,16 @@ def get_data(method: str) -> pd.DataFrame:
 
 with st.sidebar:
     st.header("分析配置")
+    theme_sel = st.radio(
+        "界面主题",
+        ["dark", "light"],
+        index=0,
+        format_func=lambda t: "深色（大屏）" if t == "dark" else "浅色（清爽）",
+        help="深色适合投屏演示；浅色适合日常阅读。",
+    )
+    ui_theme.set_theme(theme_sel)
+    theme = ui_theme.get_theme()
+    st.divider()
     method = st.radio(
         "指标权重方案",
         ["equal", "entropy"],
@@ -54,19 +65,15 @@ with st.sidebar:
     )
 
 
+ui_theme.apply_theme(theme)
 df = get_data(method)
 
-st.markdown(
-    """
-    <style>
-    .block-container {padding-top: 2.2rem;}
-    [data-testid="stMetric"] {background:#f5f7fa; border-radius:8px; padding:8px 12px;}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 # ---------------------------------------------------------------- 颜色
+_PAL = ui_theme.palette(theme)
+_TYPE_C = ui_theme.type_colors(theme)
+_TPL = ui_theme.plotly_template(theme)
+
+
 def smi_color(smi: float):
     """SMI 高(错配严重)→红, SMI 低→蓝。输入 z-score，输出 RGB 列表。"""
     t = max(-2.5, min(2.5, smi)) / 5.0 + 0.5  # 归一化到 0..1
@@ -77,7 +84,7 @@ def smi_color(smi: float):
     return [int(235 - 25 * k), int(60 * (1 - k)), int(235 - 175 * k)]
 
 
-df["color"] = df["SMI"].apply(smi_color)
+df["type_color"] = df["diagnosis"].map(_TYPE_C)
 _rad = (df["DHI"] - df["DHI"].min()) / (df["DHI"].max() - df["DHI"].min() + 1e-9)
 df["radius_m"] = (_rad * 2800 + 400).round(0)
 
@@ -88,7 +95,7 @@ def build_map(data: pd.DataFrame) -> pdk.Deck:
         "ScatterplotLayer",
         data=data,
         get_position=["lng", "lat"],
-        get_fill_color="color",
+        get_fill_color="type_color",
         get_radius="radius_m",
         radius_min_pixels=8,
         radius_max_pixels=90,
@@ -104,14 +111,18 @@ def build_map(data: pd.DataFrame) -> pdk.Deck:
             "DHI 需求: {DHI:.2f} ｜ SSI 供给: {SSI:.2f} ｜ ERI 风险: {ERI:.2f}<br/>"
             "类型: {diagnosis}"
         ),
-        "style": {"backgroundColor": "#111827", "color": "white"},
+        "style": {
+            "backgroundColor": "#1C2330" if theme == "dark" else "#FFFFFF",
+            "color": "#E6E8EB" if theme == "dark" else "#1F2937",
+        },
     }
     view = pdk.ViewState(latitude=45.755, longitude=126.615, zoom=10.0)
+    map_style = "dark" if theme == "dark" else "light"
     return pdk.Deck(
         layers=[layer],
         initial_view_state=view,
         tooltip=tooltip,
-        map_style="light",
+        map_style=map_style,
     )
 
 
@@ -134,6 +145,7 @@ def smi_rank_chart(data: pd.DataFrame) -> go.Figure:
         yaxis_title="",
         height=560,
         margin=dict(l=10, r=30, t=45, b=10),
+        template=_TPL,
     )
     return fig
 
@@ -150,7 +162,7 @@ def quadrant_chart(data: pd.DataFrame) -> go.Figure:
         size=[40] * len(d),
         hover_name="anchor_name",
         hover_data={"SSI": ":.2f", "DHI": ":.2f", "ERI": ":.2f", "SMI": ":.2f"},
-        color_discrete_sequence=px.colors.qualitative.Set2,
+        color_discrete_map=_TYPE_C,
     )
     fig.add_vline(x=0, line_dash="dash", line_color="gray")
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
@@ -160,6 +172,7 @@ def quadrant_chart(data: pd.DataFrame) -> go.Figure:
         yaxis_title="需求热度指数 DHI（↑ 需求越高）",
         height=520,
         legend_title="诊断类型",
+        template=_TPL,
     )
     return fig
 
@@ -183,6 +196,7 @@ def pain_radar(data: pd.DataFrame, anchor: str) -> go.Figure:
         polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
         height=380,
         margin=dict(l=40, r=40, t=45, b=20),
+        template=_TPL,
     )
     return fig
 
@@ -199,23 +213,35 @@ def dp_pressure_chart(data: pd.DataFrame, anchor: str) -> go.Figure:
         yaxis_title="触发率",
         height=320,
         margin=dict(l=10, r=10, t=45, b=10),
+        template=_TPL,
     )
     return fig
 
 
 # ---------------------------------------------------------------- 页面
 st.title("❄️ 哈尔滨冰雪旅游服务设施供需诊断")
-st.caption(
-    "基于 4 类异构数据源（高德 POI / 携程住宿 / 大众点评 / 小红书舆情，8 万+ 条记录）"
-    "构建 DHI/SSI/ERI/ERI_plus/SMI 五指标，对 20 个核心文旅锚点做空间供需错配诊断。"
-    "数据口径与结论详见结题报告，所有指标均为样本内相对比较。"
+st.markdown(
+    '<p class="hero-sub">多源异构数据融合（高德 / 携程 / 大众点评 / 小红书）· '
+    "20 核心文旅锚点 · 5 项自研指标 · 空间供需错配诊断</p>",
+    unsafe_allow_html=True,
 )
 
 kpi_cols = st.columns(4)
-kpi_cols[0].metric("数据源", "4 类异构")
-kpi_cols[1].metric("记录规模", "8 万+ 条")
-kpi_cols[2].metric("核心锚点", "20 个")
-kpi_cols[3].metric("自研指标", "5 项")
+kpi_cols[0].metric("数据源", "4 类异构", "高德·携程·点评·小红书")
+kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
+kpi_cols[2].metric("核心锚点", "20 个", "人工白名单复核")
+kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
+
+with st.expander("📖 研究叙事（30 秒看懂这个系统）"):
+    st.markdown(
+        "**为什么做**：哈尔滨冰雪旅游火爆，但服务设施存在空间失衡——景区周边"
+        "供给不足、老城核心高峰承载压力大。\n\n"
+        "**怎么做**：将 4 类异构数据（设施点位/住宿/餐饮评论/舆情文本）通过 **POI 锚点对齐**"
+        "统一到 20 个核心锚点，构建 **DHI（需求）· SSI（供给）· ERI（风险）· SMI（错配）**"
+        "四类诊断指标。\n\n"
+        "**发现了什么**：问题分三类——**设施不足型**（松花江/冰雪大世界/太阳岛，近场服务薄弱）、"
+        "**高峰承载型**（中央大街，设施不缺但拥挤排队）、**局部风险型**（果戈里大街排队压力）。"
+    )
 
 # ---- 数据质量审计（供数据质量页签与导出复用）----
 AUDIT_COLS = SUPPLY_COLS + ["xhs_mentions", "dp_review_count"] + PAIN_RATE_COLS
@@ -291,62 +317,87 @@ th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px
 </body></html>"""
 
 
-download_cols = st.columns(2)
-with download_cols[0]:
-    st.download_button(
-        "📥 导出指标明细 Excel",
-        data=build_excel_bytes(df, weights_comparison_df()),
-        file_name=f"harbin_diagnosis_{method}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="dl_excel",
-    )
-with download_cols[1]:
-    st.download_button(
-        "📄 导出诊断报告 HTML",
-        data=build_html_summary(df),
-        file_name=f"harbin_diagnosis_{method}.html",
-        mime="text/html",
-        key="dl_html",
-    )
-st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
-
 tab_overview, tab_explore, tab_anchor, tab_quality = st.tabs(
     ["总览地图", "指标筛选与象限", "单锚点诊断", "数据质量"]
 )
 
 # ---- Tab 1 总览 ----
 with tab_overview:
-    col_map, col_rank = st.columns([3, 2])
-    with col_map:
-        st.subheader("核心锚点供需错配地图")
-        st.caption("气泡大小 = DHI 需求热度；颜色 = SMI 错配度（红=错配突出，蓝=相对均衡）")
-        st.pydeck_chart(build_map(df))
-    with col_rank:
-        st.plotly_chart(smi_rank_chart(df), width="stretch")
+    st.session_state.setdefault("selected_anchor", None)
 
-    st.subheader("诊断类型分布")
-    dist = df["diagnosis"].value_counts().reindex(DIAGNOSIS_ORDER).dropna()
-    fig_dist = go.Figure(
-        go.Bar(
-            x=dist.values,
-            y=dist.index,
-            orientation="h",
-            marker_color=px.colors.qualitative.Set2[: len(dist)],
-            text=dist.values,
-            textposition="outside",
+    # 诊断类型筛选
+    avail_types = [t for t in DIAGNOSIS_ORDER if t in df["diagnosis"].unique()]
+    sel_types = st.multiselect(
+        "按诊断类型筛选锚点",
+        DIAGNOSIS_ORDER,
+        default=avail_types,
+        help="地图与排名同步过滤。颜色编码：红=设施不足，橙=高峰承载，紫=局部风险，绿=分流承接。",
+    )
+    sub = df[df["diagnosis"].isin(sel_types)] if sel_types else df
+
+    col_map, col_side = st.columns([7, 3])
+    with col_map:
+        st.subheader("核心锚点空间格局")
+        st.caption("气泡大小 = DHI 需求热度；颜色 = 诊断类型；点击气泡联动「单锚点诊断」")
+        evt = st.pydeck_chart(
+            build_map(sub),
+            on_select="rerun",
+            selection_mode="single-object",
+            height=520,
         )
+        if evt and evt.selection and evt.selection.get("objects"):
+            obj = evt.selection["objects"][0]
+            clicked = obj.get("anchor_name") or obj.get("name") or ""
+            if clicked:
+                st.session_state["selected_anchor"] = clicked
+    with col_side:
+        st.subheader("SMI 错配 Top 10")
+        st.plotly_chart(smi_rank_chart(sub.head(10)), width="stretch")
+
+    # 核心发现
+    st.subheader("核心发现")
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(
+        '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
+        '<div class="title">松花江 · 冰雪大世界 · 太阳岛</div>'
+        '<div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），'
+        "优先补短途接驳与防寒休憩设施。</div></div>",
+        unsafe_allow_html=True,
     )
-    fig_dist.update_layout(
-        xaxis_title="锚点数量",
-        yaxis_title="",
-        height=300,
-        margin=dict(l=10, r=30, t=10, b=10),
+    c2.markdown(
+        '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
+        '<div class="title">中央大街 · 圣索菲亚教堂</div>'
+        '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
+        "而非增加设施。</div></div>",
+        unsafe_allow_html=True,
     )
-    st.plotly_chart(fig_dist, width="stretch")
-    st.caption(
-        "分类口径：DHI>0 为高需求，SSI>0 为高供给，ERI>0 为高风险（相对 20 锚点均值 0）。"
-        "高需求—低供给=设施不足型；高需求—高供给—高风险=高峰承载型。详见报告 3.2.6。"
+    c3.markdown(
+        '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
+        '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
+        '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
+        "承接核心区外溢的潜力。</div></div>",
+        unsafe_allow_html=True,
     )
+
+    # 一键导出
+    dl1, dl2 = st.columns(2)
+    with dl1:
+        st.download_button(
+            "📥 导出指标明细 Excel",
+            data=build_excel_bytes(df, weights_comparison_df()),
+            file_name=f"harbin_diagnosis_{method}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_excel",
+        )
+    with dl2:
+        st.download_button(
+            "📄 导出诊断报告 HTML",
+            data=build_html_summary(df),
+            file_name=f"harbin_diagnosis_{method}.html",
+            mime="text/html",
+            key="dl_html",
+        )
+    st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
 
 # ---- Tab 2 指标筛选与象限 ----
 with tab_explore:
@@ -389,9 +440,36 @@ with tab_explore:
             hide_index=True,
         )
 
+    st.divider()
+    st.subheader("指标分布（20 锚点样本内相对比较）")
+    dist_col = st.selectbox("选择指标", INDEX_COLS, index=0)
+    fig_hist = px.histogram(
+        df,
+        x=dist_col,
+        nbins=12,
+        marginal="box",
+        color="diagnosis",
+        color_discrete_map=_TYPE_C,
+        hover_name="anchor_name",
+        hover_data={"anchor_name": True},
+    )
+    fig_hist.update_layout(
+        title=f"{dist_col} 分布（0=样本均值，正值高于平均水平）",
+        xaxis_title=dist_col,
+        yaxis_title="锚点数",
+        height=380,
+        bargap=0.08,
+        template=_TPL,
+        legend_title="诊断类型",
+    )
+    st.plotly_chart(fig_hist, width="stretch")
+
 # ---- Tab 3 单锚点诊断 ----
 with tab_anchor:
-    anchor = st.selectbox("选择核心锚点", df.sort_values("mismatch_rank")["anchor_name"].tolist())
+    anchors_sorted = df.sort_values("mismatch_rank")["anchor_name"].tolist()
+    _default = st.session_state.get("selected_anchor")
+    _default_idx = anchors_sorted.index(_default) if _default in anchors_sorted else 0
+    anchor = st.selectbox("选择核心锚点（点击地图气泡可联动到此）", anchors_sorted, index=_default_idx)
     row = df[df["anchor_name"] == anchor].iloc[0]
 
     m1, m2, m3, m4, m5 = st.columns(5)
@@ -456,33 +534,36 @@ def outlier_chart(scale3: pd.DataFrame, col: str) -> go.Figure:
         height=420,
         xaxis=dict(tickangle=45),
         legend_title="",
+        template=_TPL,
     )
     return fig
 
 
 with tab_quality:
-    st.subheader("指标权重方案对比")
-    st.caption(
-        f"当前应用使用 **{'等权（报告基线口径）' if method == 'equal' else '熵权法（数据驱动）'}**。"
-        "等权为原报告口径；熵权法按 20 锚点样本离散度客观赋权，避免人为等权带来的主观性。"
-    )
-    wdf = weights_comparison_df()
-    fig_w = px.bar(
-        wdf,
-        x="维度",
-        y=["等权", "当前方案"],
-        barmode="group",
-        facet_col="指标组",
-        facet_col_wrap=3,
-        color_discrete_sequence=["#9ecae1", "#d62728"],
-    )
-    fig_w.update_layout(height=320, legend_title="权重方案")
-    st.plotly_chart(fig_w, width="stretch")
-    st.dataframe(
-        wdf[wdf["当前方案"] != wdf["等权"]].round(4) if method != "equal" else wdf.round(4),
-        width="stretch",
-        hide_index=True,
-    )
+    with st.expander("⚖️ 指标权重方案对比（等权 vs 熵权）", expanded=False):
+        st.caption(
+            f"当前应用使用 **{'等权（报告基线口径）' if method == 'equal' else '熵权法（数据驱动）'}**。"
+            "等权为原报告口径；熵权法按 20 锚点样本离散度客观赋权，避免人为等权带来的主观性。"
+        )
+        wdf = weights_comparison_df()
+        fig_w = px.bar(
+            wdf,
+            x="维度",
+            y=["等权", "当前方案"],
+            barmode="group",
+            facet_col="指标组",
+            facet_col_wrap=3,
+            color_discrete_sequence=["#9ecae1", "#d62728"],
+        )
+        fig_w.update_layout(
+            height=320, legend_title="权重方案", template=ui_theme.plotly_template(theme)
+        )
+        st.plotly_chart(fig_w, width="stretch")
+        st.dataframe(
+            wdf[wdf["当前方案"] != wdf["等权"]].round(4) if method != "equal" else wdf.round(4),
+            width="stretch",
+            hide_index=True,
+        )
 
     st.divider()
     st.subheader("数据质量审计（IQR / Z-score 离群检测）")
