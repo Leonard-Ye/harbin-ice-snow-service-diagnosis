@@ -241,7 +241,7 @@ def diagnosis_badge(diagnosis: str) -> str:
 
 
 # ---------------------------------------------------------------- 页面
-with st.container(border=True, key="hero"):
+with st.container(key="hero"):
     st.title("哈尔滨冰雪旅游服务设施供需诊断")
     st.markdown(
         '<p class="hero-sub">用 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）找出'

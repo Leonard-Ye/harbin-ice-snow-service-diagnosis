@@ -25,8 +25,8 @@ DARK = {
     "metric_border": "1px solid rgba(79,195,247,0.28)",
     "card_bg": "rgba(28,35,48,0.75)",
     "card_border": "1px solid rgba(255,255,255,0.08)",
-    "hero_gradient": "linear-gradient(180deg, rgba(79,195,247,0.16), rgba(79,195,247,0.04) 55%, rgba(0,0,0,0))",
-    "hero_border": "1px solid rgba(79,195,247,0.22)",
+    "surface": "#1C2330",
+    "shadow": "0 4px 16px rgba(0,0,0,0.45)",
 }
 
 LIGHT = {
@@ -43,8 +43,8 @@ LIGHT = {
     "metric_border": "1px solid rgba(21,101,192,0.20)",
     "card_bg": "rgba(255,255,255,0.90)",
     "card_border": "1px solid rgba(0,0,0,0.06)",
-    "hero_gradient": "linear-gradient(180deg, rgba(21,101,192,0.08), rgba(21,101,192,0.02) 55%, rgba(0,0,0,0))",
-    "hero_border": "1px solid rgba(21,101,192,0.14)",
+    "surface": "#FFFFFF",
+    "shadow": "0 1px 2px rgba(16,24,40,0.04), 0 4px 16px rgba(16,24,40,0.07)",
 }
 
 THEMES = {"dark": DARK, "light": LIGHT}
@@ -149,20 +149,20 @@ def apply_theme(theme: str) -> None:
     .insight-card .title {{ font-size: 15px; font-weight: 600; margin: 4px 0; }}
     .insight-card .body {{ font-size: 13px; color: {t['text']}; line-height: 1.6; }}
     .hero-sub {{ color: {t['muted']}; font-size: 14px; margin-top: -6px; }}
-    /* ---- 背景分区：hero 渐变 / 区块卡片 / 色条标题 ---- */
+    /* ---- 背景分区：Material 风格（无渐变，靠阴影与留白分层）---- */
     .st-key-hero {{
-        background: {t['hero_gradient']};
-        border: {t['hero_border']};
-        border-radius: 14px;
-        padding: 20px 24px 12px;
-        margin-bottom: 8px;
+        border: none !important;
+        background: transparent;
+        padding: 6px 0 2px;
+        margin-bottom: 4px;
     }}
-    .st-key-insights {{
-        background: {t['card_bg']};
+    .st-key-export, .st-key-insights {{
+        background: {t['surface']};
         border: {t['card_border']};
         border-radius: 12px;
-        padding: 10px 18px 14px;
-        margin-top: 10px;
+        padding: 12px 18px 14px;
+        box-shadow: {t['shadow']};
+        margin-top: 12px;
     }}
     .section-title {{
         display: flex; align-items: center; gap: 8px;

@@ -165,12 +165,14 @@ def test_tab_guide_present(app):
 
 
 def test_background_zoning_present(app):
-    """页面应有背景分区（hero 渐变容器 + 区块标题色条 + 导出卡片），建立视觉重心。"""
+    """页面应有背景分区（Material 阴影卡片，无渐变），建立视觉重心。"""
     src = open(APP_PATH, encoding="utf-8").read()
-    assert 'with st.container(border=True, key="hero")' in src, "hero 渐变容器缺失"
+    assert 'with st.container(key="hero")' in src, "hero 容器缺失"
     assert 'key="export"' in src, "导出卡片容器缺失"
     assert 'class="section-title"' in src, "色条区块标题缺失"
     theme_src = open(os.path.join(ROOT, "05_streamlit_dashboard", "ui_theme.py"), encoding="utf-8").read()
-    assert "hero_gradient" in theme_src, "ui_theme 缺少 hero 渐变"
-    assert ".st-key-hero" in theme_src and ".st-key-insights" in theme_src
+    assert "hero_gradient" not in theme_src, "渐变方案已废弃，不应残留"
+    assert "shadow" in theme_src and "surface" in theme_src, "Material 阴影卡片样式缺失"
+    assert "box-shadow" in theme_src
+    assert ".st-key-hero" in theme_src and ".st-key-export" in theme_src
     assert ".section-title" in theme_src
