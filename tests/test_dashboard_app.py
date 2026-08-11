@@ -103,3 +103,25 @@ def test_overview_layout_gives_side_column_space(app):
     # SMI 排名图标题精简（防窄栏截断），说明移到 caption
     assert 'title="SMI 服务错配排名 Top 10"' in src
     assert "SMI = z(DHI) + z(ERI) − z(SSI)" in src
+
+
+def test_narrative_has_indicator_table(app):
+    """研究叙事必须内置五指标释义表（HR 不读文档也能看懂成果）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "5 项自研指标怎么读" in src
+    for name in ["DHI 需求热度", "SSI 服务供给", "ERI 体验风险", "ERI_plus 餐饮压力", "SMI 服务错配"]:
+        assert name in src
+
+
+def test_narrative_no_markdown_asterisks(app):
+    """研究叙事不应出现 ** 加粗语法（渲染为字面 **** 的瑕疵）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    start = src.index("#### 为什么做")
+    end = src.index("#### 发现了什么")
+    narrative = src[start:end]
+    assert "**" not in narrative, "研究叙事含未处理的 ** 加粗语法"
+
+
+def test_entropy_is_default_weighting(app):
+    """熵权法（数据驱动）应为默认权重方案，等权仅作对照。"""
+    assert app.radio[0].value == "entropy", f"默认权重应为 entropy，实际 {app.radio[0].value}"
