@@ -81,6 +81,20 @@ def smi_color(smi: float):
 df["type_color"] = (
     df["diagnosis"].map(_TYPE_C).apply(ui_theme.hex_to_rgb)
 )
+# 初始透明度层次：alpha 按 DHI 归一化（120~240），高热度锚点更实、低热度更透
+_dhi_min, _dhi_max = float(df["DHI"].min()), float(df["DHI"].max())
+
+
+def _bubble_color(hex_color: str, dhi: float):
+    rgb = ui_theme.hex_to_rgb(hex_color)
+    t = (dhi - _dhi_min) / (_dhi_max - _dhi_min + 1e-9)
+    rgb[3] = int(120 + t * 120)  # alpha 范围 [120, 240]
+    return rgb
+
+
+df["type_color"] = df.apply(
+    lambda r: _bubble_color(_TYPE_C[r["diagnosis"]], r["DHI"]), axis=1
+)
 _rad = (df["DHI"] - df["DHI"].min()) / (df["DHI"].max() - df["DHI"].min() + 1e-9)
 df["radius_m"] = (_rad * 2800 + 400).round(0)
 
@@ -177,6 +191,8 @@ def pain_radar(data: pd.DataFrame, anchor: str) -> go.Figure:
     row = data[data["anchor_name"] == anchor].iloc[0]
     labels = [PAIN_CN[c] for c in PAIN_COLS] + ["负面情绪"]
     vals = [row[c] for c in PAIN_COLS] + [row["xhs_negative_rate"]]
+    # 径向范围自适应数据上限（避免触发率远小于 1 时图形挤在中心）
+    rmax = max(max(vals) * 1.25, 0.1)
     fig = go.Figure(
         go.Scatterpolar(
             r=vals,
@@ -189,7 +205,7 @@ def pain_radar(data: pd.DataFrame, anchor: str) -> go.Figure:
     )
     fig.update_layout(
         title=f"{anchor} — 体验风险触发率（小红书文本，相对比例）",
-        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+        polar=dict(radialaxis=dict(visible=True, range=[0, rmax])),
         height=380,
         margin=dict(l=40, r=40, t=45, b=20),
         template=_TPL,
@@ -452,8 +468,7 @@ with tab_explore:
     fig_hist = px.histogram(
         df,
         x=dist_col,
-        nbins=12,
-        marginal="box",
+        nbins=14,
         color="diagnosis",
         color_discrete_map=_TYPE_C,
         hover_name="anchor_name",
@@ -463,7 +478,7 @@ with tab_explore:
         title=f"{dist_col} 分布（0=样本均值，正值高于平均水平）",
         xaxis_title=dist_col,
         yaxis_title="锚点数",
-        height=380,
+        height=460,
         bargap=0.08,
         template=_TPL,
         legend_title="诊断类型",
@@ -492,6 +507,21 @@ with tab_anchor:
         unsafe_allow_html=True,
     )
     st.write(strategy_for(row["diagnosis"]))
+
+    with st.expander("指标速查：五个指标是什么意思？", icon=":material/query_stats:"):
+        st.markdown(
+            "所有指标均为 **20 个锚点样本内的相对值**（Z-score，0 = 平均水平，"
+            "**正值高于平均、负值低于平均**）：\n\n"
+            "| 指标 | 含义 | 数值 > 0 说明 |\n"
+            "|---|---|---|\n"
+            "| **DHI** 需求热度 | 小红书提及热度（log1p 压缩极端值） | 该锚点在社交媒体上关注度高于平均 |\n"
+            "| **SSI** 服务供给 | 3km 内六类设施数量（住宿/餐饮/交通/公共/购物/医疗） | 周边实体服务比平均更密集 |\n"
+            "| **ERI** 体验风险 | 负面情绪占比 + 交通/排队/防寒/价格四类痛点**触发率** | 游客吐槽风险高于平均（触发率=痛点提及数/总提及数，避免高热度误判） |\n"
+            "| **ERI_plus** 餐饮压力 | ERI + 大众点评价格/排队/服务压力 | 餐饮消费压力高于平均（仅核心餐饮锚点验证） |\n"
+            "| **SMI** 服务错配 | z(DHI) + z(ERI) − z(SSI) | 需求与风险叠加、供给不足的相对错配更突出 |\n\n"
+            "**怎么看**：SMI 排名靠前≠设施一定不够，回到 DHI/SSI/ERI 三个分项看是"
+            "「需求热」「风险高」还是「供给缺」哪种驱动。"
+        )
 
     col_r, col_d = st.columns(2)
     with col_r:

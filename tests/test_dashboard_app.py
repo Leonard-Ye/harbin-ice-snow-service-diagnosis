@@ -61,3 +61,25 @@ def test_resolve_selected_anchor_parses_pydeck_state():
     assert resolve_selected_anchor({"objects": {"anchors": []}}) == ""
     # objects 是 list（旧版/异常结构）应安全回退
     assert resolve_selected_anchor({"objects": [{"anchor_name": "x"}]}) == ""
+
+
+def test_indicator_guide_present(app):
+    """Dashboard 内应提供五指标语义速查（解决指标意义未讲清问题）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "指标速查" in src
+    for name in ["DHI", "SSI", "ERI", "ERI_plus", "SMI"]:
+        assert name in src
+
+
+def test_radar_range_adaptive(app):
+    """痛点雷达图径向范围应自适应数据（避免图形挤在中心）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "rmax = max(max(vals) * 1.25, 0.1)" in src
+    assert "range=[0, rmax]" in src
+
+
+def test_histogram_no_cramped_box(app):
+    """指标分布图不应使用矮小的 marginal=box（用户反馈看不清），且高度加大。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert 'marginal="box"' not in src
+    assert "height=460" in src
