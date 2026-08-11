@@ -80,6 +80,25 @@ def get_scale_profile() -> pd.DataFrame:
     return MetricsEngine().compute_scale_profile(load_scale())
 
 
+def resolve_selected_anchor(selection) -> str:
+    """从 st.pydeck_chart 的 selection 事件解析被点击的锚点名。
+
+    PydeckSelectionState.selection 结构：{"objects": {layer_id: [对象字典]}, ...}，
+    对象字典含数据行属性（如 anchor_name）。
+    """
+    if not selection:
+        return ""
+    objects = selection.get("objects")
+    if not isinstance(objects, dict):
+        return ""
+    for objs in objects.values():
+        if objs:
+            name = objs[0].get("anchor_name") or ""
+            if name:
+                return name
+    return ""
+
+
 def classify_anchor(dhi: float, ssi: float, eri: float) -> str:
     """按结题报告 3.2.6 的四类诊断信号对锚点分类。
 

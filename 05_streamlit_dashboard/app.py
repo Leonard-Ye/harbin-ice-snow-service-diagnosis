@@ -25,6 +25,7 @@ from dashboard_data import (
     get_scale_profile,
     get_weight_sets,
     load_scale,
+    resolve_selected_anchor,
     strategy_for,
 )
 from src.detectors.anomaly_detector import AnomalyDetector
@@ -42,7 +43,7 @@ def get_data(method: str) -> pd.DataFrame:
 
 with st.sidebar:
     st.header("分析配置")
-    st.caption("💡 右上角 **⚙ 设置 → Theme** 可切换深/浅主题")
+    st.caption("右上角 **⚙ 设置 → Theme** 可切换深/浅主题")
     st.divider()
     method = st.radio(
         "指标权重方案",
@@ -77,7 +78,9 @@ def smi_color(smi: float):
     return [int(235 - 25 * k), int(60 * (1 - k)), int(235 - 175 * k)]
 
 
-df["type_color"] = df["diagnosis"].map(_TYPE_C)
+df["type_color"] = (
+    df["diagnosis"].map(_TYPE_C).apply(ui_theme.hex_to_rgb)
+)
 _rad = (df["DHI"] - df["DHI"].min()) / (df["DHI"].max() - df["DHI"].min() + 1e-9)
 df["radius_m"] = (_rad * 2800 + 400).round(0)
 
@@ -87,6 +90,7 @@ def build_map(data: pd.DataFrame) -> pdk.Deck:
     layer = pdk.Layer(
         "ScatterplotLayer",
         data=data,
+        id="anchors",
         get_position=["lng", "lat"],
         get_fill_color="type_color",
         get_radius="radius_m",
@@ -110,12 +114,11 @@ def build_map(data: pd.DataFrame) -> pdk.Deck:
         },
     }
     view = pdk.ViewState(latitude=45.755, longitude=126.615, zoom=10.0)
-    map_style = "dark" if theme == "dark" else "light"
     return pdk.Deck(
         layers=[layer],
         initial_view_state=view,
         tooltip=tooltip,
-        map_style=map_style,
+        map_style=None,  # 跟随 Streamlit 当前主题自动选底图（官方推荐）
     )
 
 
@@ -211,6 +214,16 @@ def dp_pressure_chart(data: pd.DataFrame, anchor: str) -> go.Figure:
     return fig
 
 
+def diagnosis_badge(diagnosis: str) -> str:
+    """诊断类型彩色徽章（HTML 胶囊，颜色与地图语义色一致）。"""
+    color = _TYPE_C.get(diagnosis, _TYPE_C.get("低需求—低供给型", "#90A4AE"))
+    return (
+        f'<span style="background:{color}1f; color:{color}; '
+        f'border:1px solid {color}55; padding:2px 12px; border-radius:999px; '
+        f'font-size:13px; font-weight:500;">{diagnosis}</span>'
+    )
+
+
 # ---------------------------------------------------------------- 页面
 st.title("❄️ 哈尔滨冰雪旅游服务设施供需诊断")
 st.markdown(
@@ -225,7 +238,7 @@ kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
 kpi_cols[2].metric("核心锚点", "20 个", "人工白名单复核")
 kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
 
-with st.expander("📖 研究叙事（30 秒看懂这个系统）"):
+with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/menu_book:"):
     st.markdown(
         "**为什么做**：哈尔滨冰雪旅游火爆，但服务设施存在空间失衡——景区周边"
         "供给不足、老城核心高峰承载压力大。\n\n"
@@ -337,12 +350,11 @@ with tab_overview:
             on_select="rerun",
             selection_mode="single-object",
             height=520,
+            key="anchor_map",
         )
-        if evt and evt.selection and evt.selection.get("objects"):
-            obj = evt.selection["objects"][0]
-            clicked = obj.get("anchor_name") or obj.get("name") or ""
-            if clicked:
-                st.session_state["selected_anchor"] = clicked
+        clicked = resolve_selected_anchor(evt.selection if evt else None)
+        if clicked:
+            st.session_state["selected_anchor"] = clicked
     with col_side:
         st.subheader("SMI 错配 Top 10")
         st.plotly_chart(smi_rank_chart(sub.head(10)), width="stretch")
@@ -376,7 +388,8 @@ with tab_overview:
     dl1, dl2 = st.columns(2)
     with dl1:
         st.download_button(
-            "📥 导出指标明细 Excel",
+            "导出指标明细 Excel",
+            icon=":material/download:",
             data=build_excel_bytes(df, weights_comparison_df()),
             file_name=f"harbin_diagnosis_{method}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -384,7 +397,8 @@ with tab_overview:
         )
     with dl2:
         st.download_button(
-            "📄 导出诊断报告 HTML",
+            "导出诊断报告 HTML",
+            icon=":material/description:",
             data=build_html_summary(df),
             file_name=f"harbin_diagnosis_{method}.html",
             mime="text/html",
@@ -433,7 +447,6 @@ with tab_explore:
             hide_index=True,
         )
 
-    st.divider()
     st.subheader("指标分布（20 锚点样本内相对比较）")
     dist_col = st.selectbox("选择指标", INDEX_COLS, index=0)
     fig_hist = px.histogram(
@@ -472,7 +485,12 @@ with tab_anchor:
     m4.metric("ERI 风险", f"{row['ERI']:.2f}")
     m5.metric("ERI_plus 餐饮", f"{row['ERI_plus']:.2f}")
 
-    st.info(f"**诊断类型：{row['diagnosis']}**")
+    st.markdown(
+        f'<div style="display:flex; align-items:center; gap:10px; margin:6px 0;">'
+        f'<span style="color:{_PAL["muted"]}; font-size:14px;">诊断类型</span>'
+        f'{diagnosis_badge(row["diagnosis"])}</div>',
+        unsafe_allow_html=True,
+    )
     st.write(strategy_for(row["diagnosis"]))
 
     col_r, col_d = st.columns(2)
@@ -558,7 +576,6 @@ with tab_quality:
             hide_index=True,
         )
 
-    st.divider()
     st.subheader("数据质量审计（IQR / Z-score 离群检测）")
     scale3 = load_scale()
     scale3 = scale3[scale3["scale_km"] == 3].copy()
@@ -579,7 +596,6 @@ with tab_quality:
     col_pick = st.selectbox("离群可视化维度", AUDIT_COLS, index=AUDIT_COLS.index("ctrip_lodging_count"))
     st.plotly_chart(outlier_chart(scale3, col_pick), width="stretch")
 
-    st.divider()
     st.subheader("多尺度供给稳定性（1km / 3km / 5km）")
     prof = get_scale_profile()
     pivot = prof.pivot(index="anchor_name", columns="scale_km", values="supply_total").reset_index()

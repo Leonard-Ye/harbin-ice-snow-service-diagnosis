@@ -21,10 +21,10 @@ DARK = {
     "accent": "#4FC3F7",     # 冰蓝
     "accent2": "#B388FF",    # 紫
     "grid": "rgba(255,255,255,0.08)",
-    "metric_bg": "linear-gradient(135deg, rgba(79,195,247,0.14), rgba(179,136,255,0.10))",
-    "metric_border": "1px solid rgba(79,195,247,0.35)",
-    "card_bg": "rgba(28,35,48,0.85)",
-    "card_border": "1px solid rgba(255,255,255,0.10)",
+    "metric_bg": "rgba(79,195,247,0.07)",
+    "metric_border": "1px solid rgba(79,195,247,0.28)",
+    "card_bg": "rgba(28,35,48,0.75)",
+    "card_border": "1px solid rgba(255,255,255,0.08)",
 }
 
 LIGHT = {
@@ -37,10 +37,10 @@ LIGHT = {
     "accent": "#1565C0",     # 蓝
     "accent2": "#7B1FA2",    # 紫
     "grid": "rgba(0,0,0,0.08)",
-    "metric_bg": "linear-gradient(135deg, rgba(21,101,192,0.08), rgba(123,31,162,0.06))",
-    "metric_border": "1px solid rgba(21,101,192,0.25)",
-    "card_bg": "rgba(255,255,255,0.95)",
-    "card_border": "1px solid rgba(0,0,0,0.08)",
+    "metric_bg": "rgba(21,101,192,0.05)",
+    "metric_border": "1px solid rgba(21,101,192,0.20)",
+    "card_bg": "rgba(255,255,255,0.90)",
+    "card_border": "1px solid rgba(0,0,0,0.06)",
 }
 
 THEMES = {"dark": DARK, "light": LIGHT}
@@ -89,6 +89,13 @@ def set_theme(theme: str) -> None:
 
 def type_colors(theme: str) -> dict:
     return TYPE_COLORS[theme]
+
+
+def hex_to_rgb(hex_color: str):
+    """hex 颜色 → deck.gl RGB 列表（ScatterplotLayer 的 get_fill_color 需要 RGB 数组）。"""
+    if not isinstance(hex_color, str) or not hex_color.startswith("#") or len(hex_color) != 7:
+        return [128, 128, 128, 255]
+    return [int(hex_color[i : i + 2], 16) for i in (1, 3, 5)] + [255]
 
 
 def palette(theme: str) -> dict:
