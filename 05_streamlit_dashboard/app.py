@@ -46,12 +46,12 @@ with st.sidebar:
     st.header("分析配置")
     st.caption("右上角 **设置菜单 → Theme** 可切换深/浅主题")
     st.divider()
-    method = st.sidebar.radio(
-        "指标权重计算方案",
-        options=["entropy", "equal"],
-        format_func=lambda m: "等权（基准对照方案）" if m == "equal" else "熵权法（数据驱动，默认）",
-        index=0,
-        help="默认熵权法：按 20 锚点样本离散度客观赋权（数据驱动）；等权为基准对照方案，可切换对照。",
+    method = st.radio(
+        "指标权重方案",
+        ["equal", "entropy"],
+        index=1,
+        format_func=lambda m: "等权（基线方案）" if m == "equal" else "熵权法（数据驱动，默认）",
+        help="默认熵权法：按 20 锚点样本离散度客观赋权（数据驱动）；等权为基线方案，可切换对照。",
     )
     st.caption(
         "熵权法：min-max 归一化 → 信息熵 → 差异系数 → 权重。"
@@ -299,7 +299,7 @@ with st.container(key="hero"):
     kpi_cols = st.columns(4)
     kpi_cols[0].metric("数据源", "4 类异构", "高德·携程·点评·小红书")
     kpi_cols[1].metric("记录规模", "8 万+ 条", "POI 5.8万 + 文本 3.3万")
-    kpi_cols[2].metric("核心锚点", "20 个", "空间匹配与特征甄选")
+    kpi_cols[2].metric("核心锚点", "20 个", "精细化空间对齐")
     kpi_cols[3].metric("自研指标", "5 项", "DHI/SSI/ERI/ERI_plus/SMI")
 
 # ---- 数据质量审计（供数据质量页签与导出复用）----
@@ -369,7 +369,7 @@ table{{border-collapse:collapse;width:100%;}} th,td{{border:1px solid #ccc;paddi
 th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px;}}</style>
 </head><body>
 <h1>哈尔滨冰雪旅游服务设施供需诊断报告（Top 10 错配锚点）</h1>
-<p>权重方案：{"等权（基准对照方案）" if method == "equal" else "熵权法（数据驱动）"}　|　生成时间：{pd.Timestamp.now():%Y-%m-%d %H:%M}</p>
+<p>权重方案：{'等权（基线方案）' if method == 'equal' else '熵权法（数据驱动）'}　|　生成时间：{pd.Timestamp.now():%Y-%m-%d %H:%M}</p>
 <table><tr><th>排名</th><th>锚点</th><th>SMI</th><th>DHI</th><th>SSI</th><th>ERI</th><th>诊断类型</th></tr>{rows}</table>
 <h2>诊断类型分布</h2><ul>{dist_html}</ul>
 <p class="note">口径说明：所有指标为 20 个核心锚点样本内 Z-score 相对值（0=样本均值），SMI = z(DHI)+z(ERI)−z(SSI)。数据为聚合统计，不含任何原始评论。</p>
@@ -667,9 +667,9 @@ with tab_quality:
     with st.expander(
         "指标权重方案对比（等权 vs 熵权）", expanded=False, icon=":material/balance:"
     ):
-        st.info(
-            f"当前应用使用 **{'等权（基准对照方案）' if method == 'equal' else '熵权法（数据驱动）'}**。"
-            "等权为基准参照方案；熵权法按 20 锚点样本离散度客观赋权，避免人为赋权带来的主观性。"
+        st.caption(
+            f"当前应用使用 **{'等权（基线方案）' if method == 'equal' else '熵权法（数据驱动）'}**。"
+            "等权为对比基线；熵权法按 20 锚点样本离散度客观赋权，避免人为等权带来的主观性。"
         )
         wdf = weights_comparison_df()
         fig_w = px.bar(
@@ -728,7 +728,6 @@ with tab_quality:
 
 # ---- 页脚 ----
 st.caption(
-    "数据说明：本应用基于多源大数据融合分析快照，"
-    "覆盖高德 POI、携程住宿、大众点评餐饮评论与小红书打卡笔记；"
-    "指标为 20 个核心锚点样本内相对值；默认熵权法（数据驱动），等权为基准对照方案。"
+    "数据说明：本项目基于多源数据融合快照（高德 / 携程 / 大众点评 / 小红书聚合统计，不含原始评论），"
+    "指标为 20 个核心锚点样本内相对值；默认熵权法（数据驱动），等权为基线方案可切换对照。"
 )

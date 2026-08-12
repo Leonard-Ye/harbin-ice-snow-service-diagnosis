@@ -100,7 +100,7 @@ def resolve_selected_anchor(selection) -> str:
 
 
 def classify_anchor(dhi: float, ssi: float, eri: float) -> str:
-    """按结题报告 3.2.6 的四类诊断信号对锚点分类。
+    """按四类诊断信号对锚点分类。
 
     Z-score 以 0 为样本内相对分界（指标 >0 表示高于 20 锚点平均水平）。
     判定顺序：先看需求侧（DHI），再叠加供给（SSI）与风险（ERI）。
