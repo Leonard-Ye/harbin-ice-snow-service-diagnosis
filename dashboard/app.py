@@ -35,41 +35,22 @@ from pdf_report import build_visual_pdf_bytes
 
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", layout="wide")
 
-# structuredClone polyfill：旧手机浏览器（Safari <15.4 / 部分 Android WebView）
-# 不支持该全局函数，Streamlit 内置图表（mermaid 懒加载 chunk）裸调用会报
-# "structuredClone is not defined"。st.components.v1.html 的 iframe 与主文档
-# 同源（allow-same-origin+allow-scripts），可向 window.parent 注入全局函数。
+# structuredClone polyfill：旧手机浏览器（荣耀自带浏览器等旧 WebView 内核）
+# 无 structuredClone，Streamlit 内置图表（mermaid 懒加载 chunk）裸调用会报错。
+# 必须用纯 ES5（JSON 深拷贝）实现——ES6 特性（WeakMap 等）在旧内核同样缺失，
+# 会导致 polyfill 自身抛错注入失败。st.components.v1.html 的 iframe 与主文档
+# 同源（allow-same-origin+allow-scripts），向 window.parent 注入全局函数。
 st.components.v1.html(
     """
     <script>
     (function () {
       var parent = window.parent;
-      if (typeof parent.structuredClone === "function") { return; }
-      parent.structuredClone = function (value) {
-        if (value === null || typeof value !== "object") { return value; }
-        var cache = new WeakMap();
-        function clone(v) {
-          if (v === null || typeof v !== "object") { return v; }
-          if (cache.has(v)) { return cache.get(v); }
-          var out;
-          if (Array.isArray(v)) { out = []; }
-          else if (v instanceof Date) { out = new Date(v.getTime()); }
-          else if (v instanceof RegExp) { out = new RegExp(v.source, v.flags); }
-          else if (v instanceof Map) {
-            out = new Map(); cache.set(v, out);
-            v.forEach(function (val, key) { out.set(clone(key), clone(val)); });
-            return out;
-          } else if (v instanceof Set) {
-            out = new Set(); cache.set(v, out);
-            v.forEach(function (val) { out.add(clone(val)); });
-            return out;
-          } else { out = {}; }
-          cache.set(v, out);
-          Object.keys(v).forEach(function (k) { out[k] = clone(v[k]); });
-          return out;
-        }
-        return clone(value);
-      };
+      if (parent && typeof parent.structuredClone === "function") { return; }
+      if (parent) {
+        parent.structuredClone = function (value) {
+          return JSON.parse(JSON.stringify(value));
+        };
+      }
     })();
     </script>
     """,
@@ -427,28 +408,29 @@ th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px
 
 # ---- 核心结论（首屏，HR 30 秒看懂）----
 st.markdown('<div class="section-title">核心结论</div>', unsafe_allow_html=True)
-c1, c2, c3 = st.columns(3)
-c1.markdown(
+with st.container(key="insights_cards"):
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(
     '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
     '<div class="title">松花江 · 冰雪大世界 · 太阳岛</div>'
     '<div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），'
     "优先补短途接驳与防寒休憩设施。</div></div>",
     unsafe_allow_html=True,
 )
-c2.markdown(
-    '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
-    '<div class="title">中央大街 · 圣索菲亚教堂</div>'
-    '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
-    "而非增加设施。</div></div>",
-    unsafe_allow_html=True,
-)
-c3.markdown(
-    '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
-    '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
-    '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
-    "承接核心区外溢的潜力。</div></div>",
-    unsafe_allow_html=True,
-)
+    c2.markdown(
+        '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
+        '<div class="title">中央大街 · 圣索菲亚教堂</div>'
+        '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
+        "而非增加设施。</div></div>",
+        unsafe_allow_html=True,
+    )
+    c3.markdown(
+        '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
+        '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
+        '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
+        "承接核心区外溢的潜力。</div></div>",
+        unsafe_allow_html=True,
+    )
 
 # ---- 一键导出（首屏显眼位置）----
 with st.container(border=True, key="export"):

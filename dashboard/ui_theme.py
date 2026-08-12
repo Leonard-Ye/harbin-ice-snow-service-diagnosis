@@ -220,12 +220,18 @@ def apply_theme(theme: str) -> None:
     }}
 
     /* ---- 洞察卡片 (Bento Card) ---- */
-    /* 三卡等高：整条列链 height 传递（stHorizontalBlock→列→verticalBlock→markdown→card） */
-    [data-testid="stHorizontalBlock"] > div,
-    [data-testid="stHorizontalBlock"] [data-testid="stVerticalBlock"],
-    [data-testid="stHorizontalBlock"] [data-testid="stElementContainer"],
-    [data-testid="stHorizontalBlock"] .stMarkdown,
-    [data-testid="stHorizontalBlock"] .stMarkdown > div {{
+    /* 三卡等高（仅核心结论区）：flex:1 撑满（height:100% 在 flex 高度 auto 时无效），
+       用 container key 精确定位，不影响其他 columns 布局 */
+    [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] > div {{
+        display: flex !important;
+        flex-direction: column !important;
+    }}
+    [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] > div > div {{
+        flex: 1 !important;
+    }}
+    [class*="st-key-insights_cards"] [data-testid="stElementContainer"],
+    [class*="st-key-insights_cards"] .stMarkdown,
+    [class*="st-key-insights_cards"] .stMarkdown > div {{
         height: 100% !important;
     }}
     .insight-card {{

@@ -172,23 +172,25 @@ def test_theme_refresh_hint(app):
 
 
 def test_structured_clone_polyfill(app):
-    """应为旧手机浏览器向主文档（window.parent）注入 structuredClone polyfill。"""
+    """旧浏览器（荣耀自带等）需纯 ES5 polyfill 注入主文档，不能用 ES6 特性（WeakMap）。"""
     src = open(APP_PATH, encoding="utf-8").read()
     assert "structuredClone" in src
-    # iframe 与主文档同源：取 window.parent 并注入 parent.structuredClone（上一版注入 iframe 自身 window 无效）
     assert "window.parent" in src
     assert "parent.structuredClone = function" in src
-    assert 'typeof parent.structuredClone === "function"' in src
+    assert "JSON.parse(JSON.stringify(value))" in src, "polyfill 应为 ES5 JSON 深拷贝"
+    assert "new WeakMap" not in src, "旧 WebView 无 WeakMap，polyfill 不得实际使用 ES6 特性"
 
 
 def test_insight_cards_equal_height(app):
-    """核心结论三卡应等高（列容器 stretch + 卡片 flex 撑满）。"""
+    """核心结论三卡等高：container key 精确定位 + flex:1 撑满（不依赖 height:100%）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert 'with st.container(key="insights_cards")' in src, "核心结论需用带 key 的 container 包裹"
     theme_src = open(
         os.path.join(ROOT, "dashboard", "ui_theme.py"), encoding="utf-8"
     ).read()
-    assert 'stHorizontalBlock' in theme_src
-    assert 'height: 100%' in theme_src
-    assert 'display: flex' in theme_src
+    assert "st-key-insights_cards" in theme_src
+    assert "flex: 1 !important" in theme_src
+    assert "flex-direction: column !important" in theme_src
 
 
 def test_background_zoning_present(app):
