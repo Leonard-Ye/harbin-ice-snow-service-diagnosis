@@ -144,44 +144,63 @@ def smi_rank_chart(data: pd.DataFrame) -> go.Figure:
             x=d["SMI"],
             y=d["anchor_name"],
             orientation="h",
-            marker_color=[f"rgb({c[0]},{c[1]},{c[2]})" for c in colors],
+            marker=dict(
+                color=[f"rgb({c[0]},{c[1]},{c[2]})" for c in colors],
+                line=dict(width=0),
+                cornerradius=4,
+            ),
             text=[f"{v:.2f}" for v in d["SMI"]],
             textposition="outside",
+            textfont=dict(size=11),
         )
     )
     fig.update_layout(
-        title="SMI 服务错配排名 Top 10",
-        xaxis_title="SMI",
+        title=dict(text="SMI 服务错配排名 Top 10", font=dict(size=14, weight=700)),
+        xaxis_title="SMI 错配指数",
         yaxis_title="",
-        height=560,
-        margin=dict(l=10, r=30, t=40, b=10),
+        height=540,
+        margin=dict(l=5, r=35, t=45, b=10),
         template=_TPL,
     )
     return fig
 
 
 def quadrant_chart(data: pd.DataFrame) -> go.Figure:
-    """DHI vs SSI 供需象限（对应报告图 3-18，中线为样本均值 0）。"""
+    """DHI vs SSI 供需象限（对应报告图 3-18，四象限软色底板区）。"""
     d = data.copy()
-    d["type_cn"] = d["diagnosis"].replace("高需求—高供给—高风险型", "高需求—高供给—高风险型")
     fig = px.scatter(
         d,
         x="SSI",
         y="DHI",
         color="diagnosis",
-        size=[40] * len(d),
+        size=[60] * len(d),
         hover_name="anchor_name",
         hover_data={"SSI": ":.2f", "DHI": ":.2f", "ERI": ":.2f", "SMI": ":.2f"},
         color_discrete_map=_TYPE_C,
     )
-    fig.add_vline(x=0, line_dash="dash", line_color="gray")
-    fig.add_hline(y=0, line_dash="dash", line_color="gray")
+    
+    # 4 象限软背景区渲染
+    _min_x, _max_x = d["SSI"].min() - 0.5, d["SSI"].max() + 0.5
+    _min_y, _max_y = d["DHI"].min() - 0.5, d["DHI"].max() + 0.5
+    
+    # 左上：高需求低供给（设施不足区-红淡色）
+    fig.add_shape(type="rect", x0=_min_x, x1=0, y0=0, y1=_max_y, fillcolor="rgba(248, 113, 113, 0.05)", line_width=0, layer="below")
+    # 右上：高需求高供给（高峰承载区-橙淡色）
+    fig.add_shape(type="rect", x0=0, x1=_max_x, y0=0, y1=_max_y, fillcolor="rgba(251, 146, 60, 0.05)", line_width=0, layer="below")
+    # 左下：低需求低供给（一般监测区-灰淡色）
+    fig.add_shape(type="rect", x0=_min_x, x1=0, y0=_min_y, y1=0, fillcolor="rgba(148, 163, 184, 0.04)", line_width=0, layer="below")
+    # 右下：低需求高供给（分流承接区-绿淡色）
+    fig.add_shape(type="rect", x0=0, x1=_max_x, y0=_min_y, y1=0, fillcolor="rgba(52, 211, 153, 0.05)", line_width=0, layer="below")
+
+    fig.add_vline(x=0, line_dash="dash", line_color="rgba(148, 163, 184, 0.3)")
+    fig.add_hline(y=0, line_dash="dash", line_color="rgba(148, 163, 184, 0.3)")
     fig.update_layout(
-        title="需求热度 DHI × 服务供给 SSI 象限（虚线=样本均值 0）",
+        title=dict(text="需求热度 DHI × 服务供给 SSI 象限（虚线=样本均值 0）", font=dict(size=14, weight=700)),
         xaxis_title="服务供给指数 SSI（→ 供给越强）",
         yaxis_title="需求热度指数 DHI（↑ 需求越高）",
         height=520,
-        legend_title="诊断类型",
+        margin=dict(l=10, r=10, t=45, b=10),
+        legend_title=dict(text="诊断类型", font=dict(weight=600)),
         template=_TPL,
     )
     return fig
@@ -191,7 +210,6 @@ def pain_radar(data: pd.DataFrame, anchor: str) -> go.Figure:
     row = data[data["anchor_name"] == anchor].iloc[0]
     labels = [PAIN_CN[c] for c in PAIN_COLS] + ["负面情绪"]
     vals = [row[c] for c in PAIN_COLS] + [row["xhs_negative_rate"]]
-    # 径向范围自适应数据上限（避免触发率远小于 1 时图形挤在中心）
     rmax = max(max(vals) * 1.25, 0.1)
     fig = go.Figure(
         go.Scatterpolar(
@@ -199,15 +217,30 @@ def pain_radar(data: pd.DataFrame, anchor: str) -> go.Figure:
             theta=labels,
             fill="toself",
             name=anchor,
-            line_color="#d62728",
-            fillcolor="rgba(214,39,40,0.25)",
+            line=dict(color="#F87171", width=2),
+            fillcolor="rgba(248, 113, 113, 0.20)",
+            marker=dict(size=6, color="#F87171"),
         )
     )
     fig.update_layout(
-        title=f"{anchor} — 体验风险触发率（小红书文本，相对比例）",
-        polar=dict(radialaxis=dict(visible=True, range=[0, rmax])),
+        title=dict(text=f"{anchor} — 体验风险触发率（相对比例）", font=dict(size=14, weight=700)),
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, rmax],
+                gridcolor=_PAL["grid"],
+                linecolor=_PAL["grid"],
+                tickfont=dict(size=10, color=_PAL["muted"]),
+            ),
+            angularaxis=dict(
+                gridcolor=_PAL["grid"],
+                linecolor=_PAL["grid"],
+                tickfont=dict(size=11, color=_PAL["text"]),
+            ),
+            bgcolor="rgba(0,0,0,0)",
+        ),
         height=380,
-        margin=dict(l=40, r=40, t=45, b=20),
+        margin=dict(l=30, r=30, t=45, b=15),
         template=_TPL,
     )
     return fig
@@ -218,10 +251,20 @@ def dp_pressure_chart(data: pd.DataFrame, anchor: str) -> go.Figure:
     labels = ["价格压力", "排队压力", "服务负向压力"]
     vals = [row["dp_price_pressure"], row["dp_queue_pressure"], row["dp_service_pressure"]]
     fig = go.Figure(
-        go.Bar(x=labels, y=vals, marker_color=["#e6550d", "#fd8d3c", "#a1a1a1"])
+        go.Bar(
+            x=labels,
+            y=vals,
+            marker=dict(
+                color=["#FB923C", "#F87171", "#38BDF8"],
+                line=dict(width=0),
+                cornerradius=4,
+            ),
+            text=[f"{v:.3f}" for v in vals],
+            textposition="outside",
+        )
     )
     fig.update_layout(
-        title=f"{anchor} — 大众点评餐饮压力（ERI_plus 输入）",
+        title=dict(text=f"{anchor} — 大众点评餐饮压力（ERI_plus 输入）", font=dict(size=14, weight=700)),
         yaxis_title="触发率",
         height=320,
         margin=dict(l=10, r=10, t=45, b=10),
@@ -231,21 +274,24 @@ def dp_pressure_chart(data: pd.DataFrame, anchor: str) -> go.Figure:
 
 
 def diagnosis_badge(diagnosis: str) -> str:
-    """诊断类型彩色徽章（HTML 胶囊，颜色与地图语义色一致）。"""
-    color = _TYPE_C.get(diagnosis, _TYPE_C.get("低需求—低供给型", "#90A4AE"))
+    """诊断类型彩色徽章（HTML 胶囊，高质感发光样式）。"""
+    color = _TYPE_C.get(diagnosis, _TYPE_C.get("低需求—低供给型", "#94A3B8"))
     return (
-        f'<span style="background:{color}1f; color:{color}; '
-        f'border:1px solid {color}55; padding:2px 12px; border-radius:999px; '
-        f'font-size:13px; font-weight:500;">{diagnosis}</span>'
+        f'<span style="background:{color}18; color:{color}; '
+        f'border:1px solid {color}44; padding:3px 14px; border-radius:999px; '
+        f'font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px; '
+        f'box-shadow: 0 0 10px {color}22;">'
+        f'<span style="width:6px; height:6px; border-radius:50%; background:{color}; box-shadow:0 0 6px {color};"></span>'
+        f'{diagnosis}</span>'
     )
 
 
 # ---------------------------------------------------------------- 页面
 with st.container(key="hero"):
-    st.title("哈尔滨冰雪旅游服务设施供需诊断")
+    st.title("哈尔滨冰雪旅游服务设施供需诊断", anchor=False)
     st.markdown(
-        '<p class="hero-sub">用 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）找出'
-        "哈尔滨冰雪旅游<b>哪里缺服务、哪里挤爆了</b>，对 20 个核心文旅锚点给出分区优化策略</p>",
+        '<p class="hero-sub">融合 4 类平台数据（高德 / 携程 / 大众点评 / 小红书）精确定位'
+        "<b>服务短板与高峰拥堵</b>，为 20 个核心文旅锚点提供数据驱动的分区优化策略</p>",
         unsafe_allow_html=True,
     )
 
@@ -606,10 +652,6 @@ def outlier_chart(scale3: pd.DataFrame, col: str) -> go.Figure:
 
 
 with tab_quality:
-    st.caption(
-        "这一页证明数据可信、方法严谨：IQR/Z-score 离群检测、缺失审计与多尺度敏感性——"
-        "回答评审「数据经得起检验吗」。"
-    )
     with st.expander(
         "指标权重方案对比（等权 vs 熵权）", expanded=False, icon=":material/balance:"
     ):

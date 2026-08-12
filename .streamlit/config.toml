@@ -5,48 +5,49 @@
 
 [theme]
 base = "dark"
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
 codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
 baseFontSize = 14
 baseFontWeight = 400
 linkUnderline = false
 showWidgetBorder = true
 showSidebarBorder = true
-baseRadius = "10px"
+baseRadius = "12px"
 buttonRadius = "10px"
 # 诊断类型语义色（红=设施不足/橙=高峰承载/紫=局部风险/绿=分流承接/蓝=均衡/灰=监测）
-chartCategoricalColors = ["#EF5350", "#FFA726", "#AB47BC", "#66BB6A", "#42A5F5", "#90A4AE"]
+chartCategoricalColors = ["#F87171", "#FB923C", "#C084FC", "#4ADE80", "#38BDF8", "#94A3B8"]
 
 [theme.light]
-primaryColor = "#1565C0"
-backgroundColor = "#F7F9FC"
-secondaryBackgroundColor = "#EDF2F7"
-codeBackgroundColor = "#EDF2F7"
-textColor = "#1F2937"
-linkColor = "#1565C0"
-borderColor = "#D9E2EC"
-codeTextColor = "#1F2937"
+primaryColor = "#0284C7"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#F1F5F9"
+codeBackgroundColor = "#F1F5F9"
+textColor = "#0F172A"
+linkColor = "#0284C7"
+borderColor = "#E2E8F0"
+codeTextColor = "#0F172A"
 headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
-headingFontWeights = [600, 600, 600, 600, 500, 500]
+headingFontWeights = [700, 700, 600, 600, 500, 500]
 
 [theme.light.sidebar]
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F4F8"
-borderColor = "#D9E2EC"
+secondaryBackgroundColor = "#F1F5F9"
+borderColor = "#E2E8F0"
 
 [theme.dark]
-primaryColor = "#4FC3F7"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#161B22"
-codeBackgroundColor = "#161B22"
-textColor = "#E6E8EB"
-linkColor = "#4FC3F7"
-borderColor = "#2A3342"
-codeTextColor = "#E6E8EB"
+primaryColor = "#38BDF8"
+backgroundColor = "#090D16"
+secondaryBackgroundColor = "#121722"
+codeBackgroundColor = "#121722"
+textColor = "#F1F5F9"
+linkColor = "#38BDF8"
+borderColor = "#1E293B"
+codeTextColor = "#F1F5F9"
 headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
-headingFontWeights = [600, 600, 600, 600, 500, 500]
+headingFontWeights = [700, 700, 600, 600, 500, 500]
 
 [theme.dark.sidebar]
-backgroundColor = "#161B22"
-secondaryBackgroundColor = "#1C2330"
-borderColor = "#2A3342"
+backgroundColor = "#121722"
+secondaryBackgroundColor = "#182030"
+borderColor = "#1E293B"
+

@@ -7,85 +7,81 @@
     fig.update_layout(template=ui_theme.plotly_template(theme))
     colors = ui_theme.type_colors(theme)  # 诊断类型 → 颜色
 """
-import streamlit as st
 import plotly.graph_objects as go
+import streamlit as st
 
-# ---------------------------------------------------------------- 主题色板
+# ---------------------------------------------------------------- 主题色板 (Design Tokens)
 DARK = {
     "name": "dark",
-    "bg": "#0E1117",
-    "panel": "#161B22",
-    "panel2": "#1C2330",
-    "text": "#E6E8EB",
-    "muted": "#9AA5B1",
-    "accent": "#4FC3F7",     # 冰蓝
-    "accent2": "#B388FF",    # 紫
-    "grid": "rgba(255,255,255,0.08)",
-    "metric_bg": "rgba(79,195,247,0.07)",
-    "metric_border": "1px solid rgba(79,195,247,0.28)",
-    "card_bg": "rgba(28,35,48,0.75)",
-    "card_border": "1px solid rgba(255,255,255,0.08)",
-    "surface": "#1C2330",
-    "shadow": "0 4px 16px rgba(0,0,0,0.45)",
+    "bg": "#0B0F17",
+    "panel": "#131B2A",
+    "panel2": "#1A2436",
+    "text": "#F8FAFC",
+    "muted": "#94A3B8",
+    "accent": "#38BDF8",     # 冰晶蓝
+    "accent2": "#C084FC",    # 极光紫
+    "grid": "rgba(255, 255, 255, 0.05)",
+    "metric_bg": "linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, rgba(192, 132, 252, 0.03) 100%)",
+    "metric_border": "1px solid rgba(56, 189, 248, 0.20)",
+    "card_bg": "rgba(19, 27, 42, 0.75)",
+    "card_border": "1px solid rgba(255, 255, 255, 0.08)",
+    "surface": "rgba(19, 27, 42, 0.85)",
+    "shadow": "0 8px 32px rgba(0, 0, 0, 0.40)",
+    "glow": "0 0 20px rgba(56, 189, 248, 0.20)",
 }
 
 LIGHT = {
     "name": "light",
-    "bg": "#F7F9FC",
+    "bg": "#F8FAFC",
     "panel": "#FFFFFF",
-    "panel2": "#F0F4F8",
-    "text": "#1F2937",
-    "muted": "#6B7280",
-    "accent": "#1565C0",     # 蓝
-    "accent2": "#7B1FA2",    # 紫
-    "grid": "rgba(0,0,0,0.08)",
-    "metric_bg": "rgba(21,101,192,0.05)",
-    "metric_border": "1px solid rgba(21,101,192,0.20)",
-    "card_bg": "rgba(255,255,255,0.90)",
-    "card_border": "1px solid rgba(0,0,0,0.06)",
+    "panel2": "#F1F5F9",
+    "text": "#0F172A",
+    "muted": "#64748B",
+    "accent": "#0284C7",     # 冰川蓝
+    "accent2": "#9333EA",    # 极光紫
+    "grid": "rgba(0, 0, 0, 0.05)",
+    "metric_bg": "linear-gradient(135deg, rgba(2, 132, 199, 0.05) 0%, rgba(147, 51, 234, 0.02) 100%)",
+    "metric_border": "1px solid rgba(2, 132, 199, 0.16)",
+    "card_bg": "rgba(255, 255, 255, 0.90)",
+    "card_border": "1px solid rgba(0, 0, 0, 0.06)",
     "surface": "#FFFFFF",
-    "shadow": "0 1px 2px rgba(16,24,40,0.04), 0 4px 16px rgba(16,24,40,0.07)",
+    "shadow": "0 4px 20px rgba(15, 23, 42, 0.06)",
+    "glow": "0 0 15px rgba(2, 132, 199, 0.15)",
 }
 
 THEMES = {"dark": DARK, "light": LIGHT}
 
 # ---------------------------------------------------------------- 诊断类型配色
-# 六类诊断类型的语义色（深色/浅色各一套，保持色相一致、明度适配）
 TYPE_COLORS = {
     "dark": {
-        "高需求—低供给型": "#EF5350",       # 红：设施不足
-        "高需求—高供给—高风险型": "#FFA726", # 橙：高峰承载
-        "低需求—高风险型": "#AB47BC",        # 紫：定点整改
-        "低需求—高供给型": "#66BB6A",        # 绿：分流承接
-        "高需求—高供给型": "#42A5F5",        # 蓝：均衡
-        "低需求—低供给型": "#90A4AE",        # 灰：一般监测
+        "高需求—低供给型": "#F87171",       # 珊红：设施不足
+        "高需求—高供给—高风险型": "#FB923C", # 暖橙：高峰承载
+        "低需求—高风险型": "#C084FC",        # 罗兰紫：局部风险
+        "低需求—高供给型": "#34D399",        # 翡翠绿：分流承接
+        "高需求—高供给型": "#38BDF8",        # 冰蓝：均衡
+        "低需求—低供给型": "#94A3B8",        # 板岩灰：一般监测
     },
     "light": {
-        "高需求—低供给型": "#D32F2F",
-        "高需求—高供给—高风险型": "#EF6C00",
-        "低需求—高风险型": "#8E24AA",
-        "低需求—高供给型": "#388E3C",
-        "高需求—高供给型": "#1976D2",
-        "低需求—低供给型": "#78909C",
+        "高需求—低供给型": "#DC2626",
+        "高需求—高供给—高风险型": "#EA580C",
+        "低需求—高风险型": "#9333EA",
+        "低需求—高供给型": "#16A34A",
+        "高需求—高供给型": "#0284C7",
+        "低需求—低供给型": "#64748B",
     },
 }
 
 
 def get_theme() -> str:
-    """读取当前主题（Streamlit 原生，跟随设置菜单/系统偏好）。
-
-    全局颜色由 .streamlit/config.toml 的 [theme.light]/[theme.dark] 接管，
-    这里只读取值以驱动 Plotly 模板与图表语义配色。
-    """
+    """读取当前主题（Streamlit 原生，跟随设置菜单/系统偏好）。"""
     try:
-        theme = st.context.theme.type  # "light" | "dark"
+        theme = st.context.theme.type
         return theme if theme in ("dark", "light") else "light"
     except Exception:
         return "light"
 
 
 def set_theme(theme: str) -> None:
-    """原生主题由设置菜单控制，不可程序化设置；保留占位以防误用。"""
     raise NotImplementedError(
         "Streamlit 原生主题不可程序化切换，请在右上角 ⚙ 设置 → Theme 中切换。"
     )
@@ -96,7 +92,7 @@ def type_colors(theme: str) -> dict:
 
 
 def hex_to_rgb(hex_color: str):
-    """hex 颜色 → deck.gl RGB 列表（ScatterplotLayer 的 get_fill_color 需要 RGB 数组）。"""
+    """hex 颜色 → deck.gl RGB 列表。"""
     if not isinstance(hex_color, str) or not hex_color.startswith("#") or len(hex_color) != 7:
         return [128, 128, 128, 255]
     return [int(hex_color[i : i + 2], 16) for i in (1, 3, 5)] + [255]
@@ -107,19 +103,42 @@ def palette(theme: str) -> dict:
 
 
 def plotly_template(theme: str) -> go.layout.Template:
-    """基于 Plotly 内置模板定制：透明背景 + 统一字体/网格，适配深/浅主题。"""
+    """大厂级 Plotly 零边距高高密图表模板。"""
     t = THEMES[theme]
     template = go.layout.Template()
     template.layout = go.Layout(
-        font=dict(family="'Segoe UI','Microsoft YaHei',sans-serif", color=t["text"], size=13),
+        font=dict(
+            family="'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif",
+            color=t["text"],
+            size=12,
+        ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        colorway=[t["accent"], t["accent2"], "#66BB6A", "#FFA726", "#EF5350", "#AB47BC"],
-        xaxis=dict(gridcolor=t["grid"], zerolinecolor=t["grid"], linecolor=t["grid"]),
-        yaxis=dict(gridcolor=t["grid"], zerolinecolor=t["grid"], linecolor=t["grid"]),
-        legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="rgba(0,0,0,0)"),
+        colorway=[t["accent"], t["accent2"], "#34D399", "#FB923C", "#F87171", "#C084FC"],
+        margin=dict(l=10, r=20, t=35, b=10),
+        xaxis=dict(
+            gridcolor=t["grid"],
+            zerolinecolor=t["grid"],
+            linecolor=t["grid"],
+            title=dict(font=dict(size=12, color=t["muted"])),
+            tickfont=dict(size=11, color=t["muted"]),
+        ),
+        yaxis=dict(
+            gridcolor=t["grid"],
+            zerolinecolor=t["grid"],
+            linecolor=t["grid"],
+            title=dict(font=dict(size=12, color=t["muted"])),
+            tickfont=dict(size=11, color=t["muted"]),
+        ),
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            bordercolor="rgba(0,0,0,0)",
+            font=dict(size=11, color=t["text"]),
+        ),
         hoverlabel=dict(
-            bgcolor=t["panel2"], bordercolor=t["grid"], font=dict(color=t["text"])
+            bgcolor=t["panel2"],
+            bordercolor=t["grid"],
+            font=dict(family="'Inter', 'Microsoft YaHei', sans-serif", color=t["text"], size=12),
         ),
         coloraxis_colorbar=dict(outlinewidth=0),
     )
@@ -127,52 +146,191 @@ def plotly_template(theme: str) -> go.layout.Template:
 
 
 def apply_theme(theme: str) -> None:
-    """注入组件级 CSS（内容卡片/KPI 视觉增强 + 背景分区）。
-
-    遵循官方最佳实践：全局背景/文字/控件颜色由 .streamlit/config.toml 原生主题
-    接管，此处**只**负责自定义组件的视觉效果（hero 渐变、区块卡片、色条标题）。
-    """
+    """注入大厂级 Bento Box 布局、Glassmorphism 玻璃拟态与数字微调 CSS。"""
     t = THEMES[theme]
     css = f"""
     <style>
+    /* 全局平滑渲染与数字等宽 */
+    html, body, [class*="st-"] {{
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-variant-numeric: tabular-nums;
+    }}
+    
+    /* ---- st.container(border=True) Bento Box 容器美化 ---- */
+    div[data-testid="stVerticalBlockBorderWrapper"] > div {{
+        background: {t['card_bg']} !important;
+        border: {t['card_border']} !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: {t['shadow']};
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+    div[data-testid="stVerticalBlockBorderWrapper"] > div:hover {{
+        border-color: {t['accent']}44 !important;
+    }}
+
+    /* ---- stMetric KPI 卡片质感升级 ---- */
     [data-testid="stMetric"] {{
-        background: {t['metric_bg']}; border: {t['metric_border']};
-        border-radius: 12px; padding: 14px 18px;
+        background: {t['metric_bg']} !important;
+        border: {t['metric_border']} !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: {t['shadow']};
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }}
-    div[data-testid="stExpander"] {{ background: {t['card_bg']}; border: {t['card_border']};
-        border-radius: 10px; }}
+    [data-testid="stMetric"]::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, {t['accent']}, {t['accent2']});
+        opacity: 0.8;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-2px);
+        box-shadow: {t['glow']};
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: {t['muted']} !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.2px;
+    }}
+    [data-testid="stMetricValue"] {{
+        color: {t['text']} !important;
+        font-weight: 700 !important;
+        font-size: 24px !important;
+        letter-spacing: -0.5px;
+    }}
+
+    /* ---- stExpander 质感重构 ---- */
+    div[data-testid="stExpander"] {{
+        background: {t['card_bg']} !important;
+        border: {t['card_border']} !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: {t['shadow']};
+    }}
+
+    /* ---- 洞察卡片 (Bento Card) ---- */
     .insight-card {{
-        background: {t['card_bg']}; border: {t['card_border']};
-        border-radius: 12px; padding: 14px 16px; height: 100%;
-    }}
-    .insight-card .tag {{ font-size: 12px; color: {t['muted']}; }}
-    .insight-card .title {{ font-size: 15px; font-weight: 600; margin: 4px 0; }}
-    .insight-card .body {{ font-size: 13px; color: {t['text']}; line-height: 1.6; }}
-    .hero-sub {{ color: {t['muted']}; font-size: 14px; margin-top: -6px; }}
-    /* ---- 背景分区：Material 风格（无渐变，靠阴影与留白分层）---- */
-    .st-key-hero {{
-        border: none !important;
-        background: transparent;
-        padding: 6px 0 2px;
-        margin-bottom: 4px;
-    }}
-    .st-key-export, .st-key-insights {{
-        background: {t['surface']};
+        background: {t['card_bg']};
         border: {t['card_border']};
         border-radius: 12px;
-        padding: 12px 18px 14px;
+        padding: 16px 18px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         box-shadow: {t['shadow']};
-        margin-top: 12px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }}
+    .insight-card:hover {{
+        transform: translateY(-2px);
+        box-shadow: {t['glow']};
+        border-color: {t['accent']}55;
+    }}
+    .insight-card .title {{
+        font-size: 15px;
+        font-weight: 700;
+        color: {t['text']};
+        margin: 6px 0 8px;
+        letter-spacing: -0.2px;
+    }}
+    .insight-card .body {{
+        font-size: 13px;
+        color: {t['muted']};
+        line-height: 1.6;
+    }}
+
+    /* ---- Hero 头部沉浸式面板 ---- */
+    .st-key-hero {{
+        background: linear-gradient(135deg, {t['accent']}0A 0%, {t['accent2']}05 50%, transparent 100%) !important;
+        border: {t['card_border']} !important;
+        border-radius: 14px !important;
+        padding: 18px 22px 14px !important;
+        margin-bottom: 14px !important;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: {t['shadow']};
+    }}
+    .st-key-hero h1 {{
+        background: linear-gradient(135deg, {t['text']} 50%, {t['accent']} 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800 !important;
+        letter-spacing: -0.8px;
+        margin-bottom: 4px !important;
+    }}
+    .hero-sub {{
+        color: {t['muted']};
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 0px;
+    }}
+
+    /* ---- 标题修饰条 ---- */
     .section-title {{
-        display: flex; align-items: center; gap: 8px;
-        font-size: 15px; font-weight: 600; color: {t['text']};
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: {t['text']};
         margin: 16px 0 10px;
+        letter-spacing: -0.3px;
     }}
     .section-title::before {{
-        content: ""; width: 4px; height: 16px; border-radius: 2px;
-        background: {t['accent']};
+        content: "";
+        width: 4px;
+        height: 16px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, {t['accent']}, {t['accent2']});
+        box-shadow: 0 0 8px {t['accent']}66;
+    }}
+
+    /* ---- Tabs 页签美化 ---- */
+    button[data-baseweb="tab"] {{
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 8px 16px !important;
+        transition: all 0.2s ease !important;
+    }}
+    button[data-baseweb="tab"]:hover {{
+        color: {t['accent']} !important;
+        background: {t['accent']}0D !important;
+    }}
+
+    /* ---- 按钮与下载控件 ---- */
+    div.stButton > button {{
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }}
+    div.stDownloadButton > button {{
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        border: 1px solid {t['accent']}33 !important;
+        background: {t['metric_bg']} !important;
+        color: {t['text']} !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }}
+    div.stDownloadButton > button:hover {{
+        border-color: {t['accent']} !important;
+        box-shadow: {t['glow']} !important;
+        transform: translateY(-2px);
     }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
+
+
