@@ -8,10 +8,10 @@ seaborn>=0.13
 adjustText>=1.0
 requests>=2.31
 
-# Dashboard（05_streamlit_dashboard/app.py）
+# Dashboard（dashboard/app.py）
 streamlit>=1.40
 plotly>=5.20
 pydeck>=0.9
 openpyxl>=3.1
-# PDF 可视化报告导出（05_streamlit_dashboard/pdf_report.py）
+# PDF 可视化报告导出（dashboard/pdf_report.py）
 reportlab>=4.0

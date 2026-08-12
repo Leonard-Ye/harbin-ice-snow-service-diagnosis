@@ -6,7 +6,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-APP_PATH = os.path.join(ROOT, "05_streamlit_dashboard", "app.py")
+APP_PATH = os.path.join(ROOT, "dashboard", "app.py")
 
 
 @pytest.fixture(scope="module")
@@ -171,7 +171,7 @@ def test_background_zoning_present(app):
     assert 'with st.container(key="hero")' in src, "hero 容器缺失"
     assert 'key="export"' in src, "导出卡片容器缺失"
     assert 'class="section-title"' in src, "色条区块标题缺失"
-    theme_src = open(os.path.join(ROOT, "05_streamlit_dashboard", "ui_theme.py"), encoding="utf-8").read()
+    theme_src = open(os.path.join(ROOT, "dashboard", "ui_theme.py"), encoding="utf-8").read()
     assert "hero_gradient" not in theme_src, "渐变方案已废弃，不应残留"
     assert "shadow" in theme_src and "surface" in theme_src, "Material 阴影卡片样式缺失"
     assert "box-shadow" in theme_src

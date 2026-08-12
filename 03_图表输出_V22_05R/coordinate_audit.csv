@@ -1,6 +1,0 @@
-﻿layer,coordinate_type,lon_min,lon_max,lat_min,lat_max,note
-Amap Dining,WGS-84 (converted from GCJ02 for Amap),126.54087503073306,126.63742816475835,45.696294874155214,45.8049701963798,1162 points
-Amap Transport,WGS-84 (converted from GCJ02 for Amap),126.5392994993547,126.63761148899617,45.69715070713773,45.80802282809098,1044 points
-Amap Public,WGS-84 (converted from GCJ02 for Amap),126.516070877572,126.6455568351631,45.680968121934484,45.815570822106764,579 points
-Ctrip Accom,WGS-84 (converted from GCJ02 for Amap),126.190581,129.584653,44.217443,46.442143,5871 points
-Anchors,WGS-84 (converted from GCJ02 for Amap),126.53505,126.896381,45.670668,45.819457,20 points

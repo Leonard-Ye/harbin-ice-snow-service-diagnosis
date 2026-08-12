@@ -1,8 +1,0 @@
-﻿图表名称,使用的数据源,时间戳,描述
-spatial_distribution_map,anchor_index_v22_04R2.csv,2026-06-19 10:28:33,基础空间分布与SMI数值
-smi_ranking_bar,anchor_index_v22_04R2.csv,2026-06-19 10:28:33,全局SMI降序排列
-supply_demand_quadrant,anchor_index_v22_04R2.csv,2026-06-19 10:28:33,SSI与DHI散点关系
-smi_eri_consistency_scatter,anchor_index_v22_04R2.csv,2026-06-19 10:28:33,SMI与ERI交叉验证
-dianping_pressure_heatmap,dianping_pressure_statistics_v22_04R2.csv,2026-06-19 10:28:33,百分比化的大众点评压力(Z-score归一化)
-scale_sensitivity_line,supply_buffer_statistics_v22_04R2.csv,2026-06-19 10:28:33,不同半径下物理供给总量增量
-painpoint_profile_heatmap,xhs_demand_risk_statistics_v22_04R2.csv,2026-06-19 10:28:33,剔除Laplace零命中平滑后的真实痛点率

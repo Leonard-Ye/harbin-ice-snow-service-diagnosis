@@ -10,7 +10,7 @@ from src.engines.metrics_engine import MetricsEngine, SUPPLY_COLS
 
 DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "02_多源融合数据及核心脚本",
+    "analysis",
     "V30_Multi_Source_Fusion_R2",
 )
 SCALE_FILE = os.path.join(DATA_DIR, "scale_sensitivity_1_3_5km_v22_04R2.csv")

@@ -25,13 +25,27 @@
    → 分区分类优化策略（设施不足型 / 高峰承载型 / 餐饮压力区 / 外围节点）
 ```
 
+## 目录结构
+
+```
+├── analysis/        # 多源融合分析核心脚本（融合计算 / 图表 / GIS 制图）
+├── dashboard/       # Streamlit 交互看板（app + 数据层 + 主题 + PDF 报告）
+├── outputs/         # 核心诊断图（SMI 排名 / 供需象限 / GIS 空间分布等）
+├── docs/            # 项目报告 / 简历描述 / 审查文档
+├── src/             # 工程化模块（MetricsEngine 指标引擎 / AnomalyDetector 异常检测）
+├── tests/           # pytest 单元测试（44 用例）
+├── .streamlit/      # Streamlit 原生主题配置
+├── README.md
+└── requirements*.txt
+```
+
 ## 快速开始（核心可复现链）
 
 ```powershell
 pip install -r requirements.txt
-cd 02_多源融合数据及核心脚本
+cd analysis
 python 30_multi_source_fusion_v22_04R2.py   # 融合计算 → V30_Multi_Source_Fusion_R2/*.csv
-python 31_v22_05_chart_generator.py         # 生成 8 张核心诊断图 → ../03_图表输出_V22_05R/
+python 31_v22_05_chart_generator.py         # 生成 8 张核心诊断图 → ../outputs/
 ```
 
 运行单元测试：
@@ -44,8 +58,8 @@ python -m pytest tests/
 > **数据合规说明**：仓库**不包含**平台原始评论、笔记与 POI 原始抓取文件（版权与隐私原因）。
 > 运行 `30` 需要以下本地文件（未入库，可向作者索取或按结构重建）：
 > - `00_原始基座数据/携程经纬度.csv`
-> - `02_多源融合数据及核心脚本/V25_Full_Mapping/*.csv`（多源→锚点全量映射）
-> - `02_多源融合数据及核心脚本/V27_Amap_Expansion/amap_poi_master_unlimited.csv`（高德 POI 扩展抓取）
+> - `analysis/V25_Full_Mapping/*.csv`（多源→锚点全量映射）
+> - `analysis/V27_Amap_Expansion/amap_poi_master_unlimited.csv`（高德 POI 扩展抓取）
 >
 > `V30_Multi_Source_Fusion_R2/` 下的**聚合结果 CSV 已入库**，可直接用于 `31` 图表生成与下游展示，无需原始数据。
 
@@ -66,10 +80,10 @@ python -m pytest tests/
 
 ```powershell
 pip install -r requirements.txt
-streamlit run 05_streamlit_dashboard/app.py
+streamlit run dashboard/app.py
 ```
 
-详见 `05_streamlit_dashboard/README.md`（含 Streamlit Cloud 免费部署步骤）。
+详见 `dashboard/README.md`（含 Streamlit Cloud 免费部署步骤）。
 
 ## 可选：GIS 制图
 
@@ -98,10 +112,10 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 
 ## 核心产出
 
-- **指标与诊断结果**：`02_多源融合数据及核心脚本/V30_Multi_Source_Fusion_R2/`（含 `data_quality_audit_v22_04R2.csv` 数据质量审计）
+- **指标与诊断结果**：`analysis/V30_Multi_Source_Fusion_R2/`（含 `data_quality_audit_v22_04R2.csv` 数据质量审计）
 - **工程化模块与测试**：`src/`（MetricsEngine / AnomalyDetector）、`tests/`（15 个 pytest 用例）
-- **核心诊断图**：`03_图表输出_V22_05R/`（SMI 排名、供需象限、痛点热力图、GIS 分布图、多尺度敏感性）
-- **方法审计**：`02_多源融合数据及核心脚本/V22_method_audit_report.md`（数据分级 A/B/F、双层使用架构、因果规避声明）
+- **核心诊断图**：`outputs/`（SMI 排名、供需象限、痛点热力图、GIS 分布图、多尺度敏感性）
+- **方法审计**：`analysis/V22_method_audit_report.md`（数据分级 A/B/F、双层使用架构、因果规避声明）
 - **结题报告**：`前中后期文档汇总/0624基于多元大数据的哈尔滨冰雪经济服务设施优化策略研究.docx`（docx 未入库）
 
 ## 关联工程
