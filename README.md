@@ -62,7 +62,7 @@ python -m pytest tests/
 
 ## 交互式 Dashboard
 
-基于 V30 聚合数据的 Streamlit 单页应用（锚点地图 / 指标筛选 / 单锚点诊断），数据不含原始评论，可直接公开部署：
+基于 V30 聚合数据的 Streamlit 单页应用（4 页签：总览地图 / 指标筛选 / 单锚点诊断 / 数据质量），支持**权重方案切换（等权/熵权）**与**一键导出 Excel / HTML / PDF 诊断报告**，数据不含原始评论，可直接公开部署：
 
 ```powershell
 pip install -r requirements.txt
