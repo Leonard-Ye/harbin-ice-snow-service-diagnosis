@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
-"""可视化 PDF 报告生成器：融合 0624 终稿报告文字，构建排版级多源诊断报告。"""
+﻿# -*- coding: utf-8 -*-
+"""可视化 PDF 报告生成器：渲染高精度图表 (SMI Top10 + 供需象限图) + 排版级 PDF 报告。"""
 import io
 import os
 import matplotlib
-matplotlib.use("Agg")  # 后台无 GUI 渲染模式
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -22,7 +22,6 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-# ---------------------------------------------------------------- 中文字体注册
 def _init_font():
     font_path = "C:\\Windows\\Fonts\\simhei.ttf"
     if os.path.exists(font_path):
@@ -33,30 +32,23 @@ def _init_font():
             pass
     return "Helvetica"
 
-
 FONT_NAME = _init_font()
 
-# Matplotlib 中文字体设置
 plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
-
-# ---------------------------------------------------------------- 图表渲染引擎
 def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:
-    """渲染 SMI 错配 Top 10 水平渐变柱状图。"""
     sub = df.sort_values("SMI", ascending=True).tail(10)
     fig, ax = plt.subplots(figsize=(7.2, 3.4), dpi=200)
     fig.patch.set_facecolor("#FFFFFF")
     ax.set_facecolor("#F8FAFC")
 
-    # 渐变配色：SMI 高（错配重）→ 珊瑚红，SMI 低 → 冰蓝
     smi_vals = sub["SMI"].values
     norm_vals = (smi_vals - smi_vals.min()) / (smi_vals.max() - smi_vals.min() + 1e-9)
     bar_colors = [plt.cm.coolwarm(0.25 + 0.65 * v) for v in norm_vals]
 
     bars = ax.barh(sub["anchor_name"], sub["SMI"], color=bar_colors, height=0.6, edgecolor="none")
     
-    # 标签数值
     for bar in bars:
         w = bar.get_width()
         ax.text(w + 0.05, bar.get_y() + bar.get_height() / 2, f"{w:.2f}",
@@ -77,9 +69,7 @@ def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:
     buf.seek(0)
     return buf
 
-
 def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
-    """渲染 DHI × SSI 供需四象限散点图（包含 4 象限软底色区）。"""
     fig, ax = plt.subplots(figsize=(7.2, 3.8), dpi=200)
     fig.patch.set_facecolor("#FFFFFF")
     ax.set_facecolor("#FFFFFF")
@@ -87,17 +77,14 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
     min_x, max_x = df["SSI"].min() - 0.4, df["SSI"].max() + 0.4
     min_y, max_y = df["DHI"].min() - 0.4, df["DHI"].max() + 0.4
 
-    # 绘制 4 象限淡色底板
     ax.fill_between([min_x, 0], 0, max_y, color="#FEE2E2", alpha=0.45, label="高需求低供给（设施不足区）")
     ax.fill_between([0, max_x], 0, max_y, color="#FFEDD5", alpha=0.45, label="高需求高供给（高峰承载区）")
     ax.fill_between([min_x, 0], min_y, 0, color="#F1F5F9", alpha=0.45, label="低需求低供给（一般监测区）")
     ax.fill_between([0, max_x], min_y, 0, color="#D1FAE5", alpha=0.45, label="低需求高供给（分流承接区）")
 
-    # 象限参考线
     ax.axhline(0, color="#94A3B8", linestyle="--", linewidth=0.9)
     ax.axvline(0, color="#94A3B8", linestyle="--", linewidth=0.9)
 
-    # 散点渲染
     type_color_map = {
         "高需求—低供给型": "#EF4444",
         "高需求—高供给—高风险型": "#F97316",
@@ -113,7 +100,7 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
         for _, row in group.iterrows():
             ax.annotate(row["anchor_name"], (row["SSI"], row["DHI"]), fontsize=7, xytext=(3, 3), textcoords="offset points", color="#1E293B")
 
-    ax.set_title("需求热度 DHI × 服务供给 SSI 供需诊断象限", fontsize=11, fontweight="bold", pad=10, color="#0F172A")
+    ax.set_title("需求热度 DHI x 服务供给 SSI 供需诊断象限", fontsize=11, fontweight="bold", pad=10, color="#0F172A")
     ax.set_xlabel("SSI 服务供给指数 (0=样本均值)", fontsize=8.5, color="#64748B")
     ax.set_ylabel("DHI 需求热度指数 (0=样本均值)", fontsize=8.5, color="#64748B")
     ax.set_xlim(min_x, max_x)
@@ -128,10 +115,7 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
     buf.seek(0)
     return buf
 
-
-# ---------------------------------------------------------------- Visual PDF 排版
 def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
-    """生成充实排版、无怪异留白的专业 PDF 报告字节流。"""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -184,19 +168,17 @@ def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
 
     story = []
 
-    # 1. 页眉标题与元数据
     story.append(Paragraph("哈尔滨冰雪旅游服务设施供需诊断分析简报", title_style))
-    method_name = "熵权法（数据驱动）" if method == "entropy" else "等权（报告基线口径）"
+    method_name = "熵权法（数据驱动）" if method == "entropy" else "等权重方案"
     now_str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
     story.append(
         Paragraph(
-            f"<b>多源数据：</b>高德 POI (5.8万) · 携程住宿 · 大众点评评论 · 小红书文本 (3.3万) | <b>权重口径：</b>{method_name} | <b>时间：</b>{now_str}",
+            f"<b>多源数据：</b>高德 POI (5.8万) | 携程住宿 | 大众点评评论 | 小红书文本 (3.3万) | <b>权重方案：</b>{method_name} | <b>生成时间：</b>{now_str}",
             meta_style,
         )
     )
     story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor("#38BDF8"), spaceAfter=10))
 
-    # 2. 核心 KPI 汇总矩阵
     kpi_data = [
         [
             Paragraph("<b>数据记录规模</b><br/><font size=10 color='#0284C7'><b>8 万+ 条记录</b></font>", body_style),
@@ -222,8 +204,7 @@ def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
     story.append(t_kpi)
     story.append(Spacer(1, 8))
 
-    # 3. 参考 0624 终稿整理的充实诊断结论与分区优化策略
-    story.append(Paragraph("一、 多源融合诊断结论与分区优化策略（参考 0624 研究终稿）", h2_style))
+    story.append(Paragraph("一、 多源融合诊断结论与分区优化策略", h2_style))
 
     strategies = [
         (
@@ -272,21 +253,18 @@ def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
     story.append(t_strat)
     story.append(Spacer(1, 10))
 
-    # 4. 可视化图表 1：SMI Top 10 柱状图
     story.append(Paragraph("二、 SMI 服务错配 Top 10 锚点可视化", h2_style))
     chart1_buf = generate_smi_chart_png(df)
     story.append(Image(chart1_buf, width=530, height=240))
 
     story.append(Spacer(1, 10))
 
-    # 5. 可视化图表 2：DHI × SSI 四象限散点图
-    story.append(Paragraph("三、 需求热度 DHI × 服务供给 SSI 供需诊断象限", h2_style))
+    story.append(Paragraph("三、 需求热度 DHI x 服务供给 SSI 供需诊断象限", h2_style))
     chart2_buf = generate_quadrant_chart_png(df)
     story.append(Image(chart2_buf, width=530, height=270))
 
     story.append(Spacer(1, 10))
 
-    # 6. Top 10 锚点诊断明细表
     story.append(Paragraph("四、 Top 10 服务错配锚点详细指标明细", h2_style))
     top10_df = df.sort_values("SMI", ascending=False).head(10)
     
