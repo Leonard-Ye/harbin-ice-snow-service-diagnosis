@@ -35,6 +35,21 @@ from pdf_report import build_visual_pdf_bytes
 
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", layout="wide")
 
+# structuredClone polyfill：旧手机浏览器（Safari <15.4 / 部分 Android WebView）
+# 不支持该全局函数，会导致图表/组件报 "structuredClone is not defined"。
+st.components.v1.html(
+    """
+    <script>
+    if (typeof window.structuredClone !== "function") {
+      window.structuredClone = function (value) {
+        return JSON.parse(JSON.stringify(value));
+      };
+    }
+    </script>
+    """,
+    height=0,
+)
+
 
 # ---------------------------------------------------------------- 数据
 @st.cache_data(show_spinner="加载 V30 多源融合聚合结果 ...")

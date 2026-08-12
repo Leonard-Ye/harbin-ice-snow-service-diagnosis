@@ -171,6 +171,23 @@ def test_theme_refresh_hint(app):
     assert "切换主题后请刷新页面" in src
 
 
+def test_structured_clone_polyfill(app):
+    """应为旧手机浏览器注入 structuredClone polyfill（否则报 not defined）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "structuredClone" in src
+    assert "typeof window.structuredClone !== \"function\"" in src
+
+
+def test_insight_cards_equal_height(app):
+    """核心结论三卡应等高（列容器 stretch + 卡片 flex 撑满）。"""
+    theme_src = open(
+        os.path.join(ROOT, "dashboard", "ui_theme.py"), encoding="utf-8"
+    ).read()
+    assert 'stHorizontalBlock' in theme_src
+    assert 'height: 100%' in theme_src
+    assert 'display: flex' in theme_src
+
+
 def test_background_zoning_present(app):
     """页面应有背景分区（Material 阴影卡片，无渐变），建立视觉重心。"""
     src = open(APP_PATH, encoding="utf-8").read()
