@@ -13,3 +13,5 @@ streamlit>=1.40
 plotly>=5.20
 pydeck>=0.9
 openpyxl>=3.1
+# PDF 可视化报告导出（05_streamlit_dashboard/pdf_report.py）
+reportlab>=4.0

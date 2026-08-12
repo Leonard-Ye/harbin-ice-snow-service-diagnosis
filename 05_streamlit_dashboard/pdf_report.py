@@ -23,18 +23,37 @@ from reportlab.platypus import (
 )
 
 def _init_font():
-    font_path = "C:\\Windows\\Fonts\\simhei.ttf"
-    if os.path.exists(font_path):
-        try:
-            pdfmetrics.registerFont(TTFont("SimHei", font_path))
-            return "SimHei"
-        except Exception:
-            pass
+    """跨平台中文字体查找：Windows / Linux(Noto/WQY) / macOS(PingFang)。
+
+    Streamlit Cloud 为 Linux 环境，Windows 硬编码路径部署后中文会变方框。
+    找不到中文字体时回退 Helvetica（PDF 不崩溃，中文字形受限）。
+    """
+    candidates = [
+        ("C:\\Windows\\Fonts\\simhei.ttf", "SimHei", None),
+        ("C:\\Windows\\Fonts\\msyh.ttc", "MicrosoftYaHei", 0),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK", 0),
+        ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK", 0),
+        ("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", "WenQuanYiZenHei", 0),
+        ("/System/Library/Fonts/PingFang.ttc", "PingFang", 0),
+    ]
+    for path, name, subfont in candidates:
+        if os.path.exists(path):
+            try:
+                if subfont is not None:
+                    pdfmetrics.registerFont(TTFont(name, path, subfontIndex=subfont))
+                else:
+                    pdfmetrics.registerFont(TTFont(name, path))
+                return name
+            except Exception:
+                continue
     return "Helvetica"
 
 FONT_NAME = _init_font()
 
-plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
+plt.rcParams["font.sans-serif"] = [
+    "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "WenQuanYi Zen Hei",
+    "PingFang SC", "DejaVu Sans",
+]
 plt.rcParams["axes.unicode_minus"] = False
 
 def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:

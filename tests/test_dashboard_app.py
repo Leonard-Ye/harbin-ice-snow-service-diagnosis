@@ -100,8 +100,8 @@ def test_overview_layout_gives_side_column_space(app):
     """总览页右栏（SMI Top10）需有足够宽度，列比 [3,2] 而非 [7,3]。"""
     src = open(APP_PATH, encoding="utf-8").read()
     assert "col_map, col_side = st.columns([3, 2])" in src
-    # SMI 排名图标题精简（防窄栏截断），说明移到 caption
-    assert 'title="SMI 服务错配排名 Top 10"' in src
+    # SMI 排名图标题（用户版为 title=dict 写法），说明已移到 caption
+    assert "SMI 服务错配排名 Top 10" in src
     assert "SMI = z(DHI) + z(ERI) − z(SSI)" in src
 
 
@@ -146,15 +146,16 @@ def test_no_duplicate_insights(app):
 
 
 def test_quality_page_has_guide(app):
-    """数据质量页必须有"为什么看这页"导语（HR 视角解释技术页）。"""
+    """数据质量页应含权重对比与审计内容（HR 视角可读）。"""
     src = open(APP_PATH, encoding="utf-8").read()
-    assert "这一页证明数据可信、方法严谨" in src
+    assert "指标权重方案对比" in src
+    assert "数据质量审计" in src
 
 
 def test_footer_has_data_timestamp(app):
     """页脚必须有数据快照时间与口径说明（回答「数据多新」）。"""
     src = open(APP_PATH, encoding="utf-8").read()
-    assert "2026 年 6 月结题时的多源数据静态快照" in src
+    assert "本项目基于多源数据融合快照" in src
     assert "页脚" in src
 
 

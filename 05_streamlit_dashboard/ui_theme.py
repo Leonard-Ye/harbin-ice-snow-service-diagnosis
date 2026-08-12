@@ -277,6 +277,16 @@ def apply_theme(theme: str) -> None:
         margin-top: 0px;
     }}
 
+    /* ---- 导出卡片（与 hero 同风格的分区卡片）---- */
+    .st-key-export {{
+        background: {t['surface']} !important;
+        border: {t['card_border']} !important;
+        border-radius: 14px !important;
+        padding: 14px 20px !important;
+        margin-top: 12px !important;
+        box-shadow: {t['shadow']};
+    }}
+
     /* ---- 标题修饰条 ---- */
     .section-title {{
         display: flex;

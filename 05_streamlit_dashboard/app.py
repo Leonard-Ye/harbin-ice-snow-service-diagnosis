@@ -42,6 +42,12 @@ def get_data(method: str) -> pd.DataFrame:
     return add_diagnosis(full_table(method=method))
 
 
+@st.cache_data(show_spinner=False)
+def _cached_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
+    """PDF 报告缓存：显式依赖 df+method（避免隐式全局依赖导致陈旧数据）。"""
+    return build_visual_pdf_bytes(df, method)
+
+
 with st.sidebar:
     st.header("分析配置")
     st.caption("右上角 **设置菜单 → Theme** 可切换深/浅主题")
@@ -418,7 +424,7 @@ with st.container(border=True, key="export"):
         st.download_button(
             "导出可视化诊断报告 PDF",
             icon=":material/picture_as_pdf:",
-            data=build_visual_pdf_bytes(df, method),
+            data=_cached_pdf_bytes(df, method),
             file_name=f"harbin_diagnosis_{method}.pdf",
             mime="application/pdf",
             key="dl_pdf",
