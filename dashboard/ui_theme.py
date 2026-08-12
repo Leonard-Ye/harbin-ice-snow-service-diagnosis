@@ -220,8 +220,13 @@ def apply_theme(theme: str) -> None:
     }}
 
     /* ---- 洞察卡片 (Bento Card) ---- */
-    /* 三卡等高（仅核心结论区）：flex:1 撑满（height:100% 在 flex 高度 auto 时无效），
-       用 container key 精确定位，不影响其他 columns 布局 */
+    /* 三卡等高（仅核心结论区）：CSS Grid 强制列等高（grid 子项默认 stretch），
+       + 卡片 min-height 保底 + body flex 填满；用 container key 精确定位 */
+    [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] {{
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+    }}
     [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] > div {{
         display: flex !important;
         flex-direction: column !important;
@@ -239,7 +244,8 @@ def apply_theme(theme: str) -> None:
         border: {t['card_border']};
         border-radius: 12px;
         padding: 16px 18px;
-        height: 100%;
+        height: 100% !important;
+        min-height: 150px;
         display: flex;
         flex-direction: column;
         position: relative;
@@ -248,6 +254,9 @@ def apply_theme(theme: str) -> None:
         -webkit-backdrop-filter: blur(12px);
         box-shadow: {t['shadow']};
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }}
+    .insight-card .tag {{
+        flex-shrink: 0;
     }}
     .insight-card:hover {{
         transform: translateY(-2px);
@@ -260,11 +269,13 @@ def apply_theme(theme: str) -> None:
         color: {t['text']};
         margin: 6px 0 8px;
         letter-spacing: -0.2px;
+        flex-shrink: 0;
     }}
     .insight-card .body {{
         font-size: 13px;
         color: {t['muted']};
         line-height: 1.6;
+        flex: 1;
     }}
 
     /* ---- Hero 头部沉浸式面板 ---- */

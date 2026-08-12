@@ -182,15 +182,16 @@ def test_structured_clone_polyfill(app):
 
 
 def test_insight_cards_equal_height(app):
-    """核心结论三卡等高：container key 精确定位 + flex:1 撑满（不依赖 height:100%）。"""
+    """核心结论三卡等高：CSS Grid 强制列等高 + 卡片 min-height 保底 + body flex 填满。"""
     src = open(APP_PATH, encoding="utf-8").read()
     assert 'with st.container(key="insights_cards")' in src, "核心结论需用带 key 的 container 包裹"
     theme_src = open(
         os.path.join(ROOT, "dashboard", "ui_theme.py"), encoding="utf-8"
     ).read()
     assert "st-key-insights_cards" in theme_src
-    assert "flex: 1 !important" in theme_src
-    assert "flex-direction: column !important" in theme_src
+    assert "grid-template-columns: repeat(3, 1fr)" in theme_src, "CSS Grid 强制等宽等高"
+    assert "min-height: 150px" in theme_src, "卡片 min-height 保底"
+    assert "flex: 1" in theme_src, "body flex 填满"
 
 
 def test_background_zoning_present(app):
