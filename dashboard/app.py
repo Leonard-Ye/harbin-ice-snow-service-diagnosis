@@ -51,6 +51,7 @@ def _cached_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
 with st.sidebar:
     st.header("分析配置")
     st.caption("右上角 **设置菜单 → Theme** 可切换深/浅主题")
+    st.caption("提示：切换主题后请刷新页面，避免图表配色显示异常")
     st.divider()
     method = st.radio(
         "指标权重方案",

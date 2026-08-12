@@ -165,6 +165,12 @@ def test_tab_guide_present(app):
     assert "页签导览" in src
 
 
+def test_theme_refresh_hint(app):
+    """侧边栏应提示切换主题后刷新页面（避免显示异常）。"""
+    src = open(APP_PATH, encoding="utf-8").read()
+    assert "切换主题后请刷新页面" in src
+
+
 def test_background_zoning_present(app):
     """页面应有背景分区（Material 阴影卡片，无渐变），建立视觉重心。"""
     src = open(APP_PATH, encoding="utf-8").read()
