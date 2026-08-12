@@ -220,9 +220,13 @@ def apply_theme(theme: str) -> None:
     }}
 
     /* ---- 洞察卡片 (Bento Card) ---- */
-    /* 三卡等高：列容器 stretch + 卡片 flex 撑满 */
-    [data-testid="stHorizontalBlock"] > div > div {{
-        height: 100%;
+    /* 三卡等高：整条列链 height 传递（stHorizontalBlock→列→verticalBlock→markdown→card） */
+    [data-testid="stHorizontalBlock"] > div,
+    [data-testid="stHorizontalBlock"] [data-testid="stVerticalBlock"],
+    [data-testid="stHorizontalBlock"] [data-testid="stElementContainer"],
+    [data-testid="stHorizontalBlock"] .stMarkdown,
+    [data-testid="stHorizontalBlock"] .stMarkdown > div {{
+        height: 100% !important;
     }}
     .insight-card {{
         background: {t['card_bg']};

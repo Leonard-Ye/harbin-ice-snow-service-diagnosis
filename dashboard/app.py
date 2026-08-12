@@ -36,15 +36,41 @@ from pdf_report import build_visual_pdf_bytes
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", layout="wide")
 
 # structuredClone polyfill：旧手机浏览器（Safari <15.4 / 部分 Android WebView）
-# 不支持该全局函数，会导致图表/组件报 "structuredClone is not defined"。
+# 不支持该全局函数，Streamlit 内置图表（mermaid 懒加载 chunk）裸调用会报
+# "structuredClone is not defined"。st.components.v1.html 的 iframe 与主文档
+# 同源（allow-same-origin+allow-scripts），可向 window.parent 注入全局函数。
 st.components.v1.html(
     """
     <script>
-    if (typeof window.structuredClone !== "function") {
-      window.structuredClone = function (value) {
-        return JSON.parse(JSON.stringify(value));
+    (function () {
+      var parent = window.parent;
+      if (typeof parent.structuredClone === "function") { return; }
+      parent.structuredClone = function (value) {
+        if (value === null || typeof value !== "object") { return value; }
+        var cache = new WeakMap();
+        function clone(v) {
+          if (v === null || typeof v !== "object") { return v; }
+          if (cache.has(v)) { return cache.get(v); }
+          var out;
+          if (Array.isArray(v)) { out = []; }
+          else if (v instanceof Date) { out = new Date(v.getTime()); }
+          else if (v instanceof RegExp) { out = new RegExp(v.source, v.flags); }
+          else if (v instanceof Map) {
+            out = new Map(); cache.set(v, out);
+            v.forEach(function (val, key) { out.set(clone(key), clone(val)); });
+            return out;
+          } else if (v instanceof Set) {
+            out = new Set(); cache.set(v, out);
+            v.forEach(function (val) { out.add(clone(val)); });
+            return out;
+          } else { out = {}; }
+          cache.set(v, out);
+          Object.keys(v).forEach(function (k) { out[k] = clone(v[k]); });
+          return out;
+        }
+        return clone(value);
       };
-    }
+    })();
     </script>
     """,
     height=0,

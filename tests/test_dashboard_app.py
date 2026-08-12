@@ -172,10 +172,13 @@ def test_theme_refresh_hint(app):
 
 
 def test_structured_clone_polyfill(app):
-    """应为旧手机浏览器注入 structuredClone polyfill（否则报 not defined）。"""
+    """应为旧手机浏览器向主文档（window.parent）注入 structuredClone polyfill。"""
     src = open(APP_PATH, encoding="utf-8").read()
     assert "structuredClone" in src
-    assert "typeof window.structuredClone !== \"function\"" in src
+    # iframe 与主文档同源：取 window.parent 并注入 parent.structuredClone（上一版注入 iframe 自身 window 无效）
+    assert "window.parent" in src
+    assert "parent.structuredClone = function" in src
+    assert 'typeof parent.structuredClone === "function"' in src
 
 
 def test_insight_cards_equal_height(app):
