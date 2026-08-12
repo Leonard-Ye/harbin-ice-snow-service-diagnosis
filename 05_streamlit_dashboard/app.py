@@ -31,6 +31,7 @@ from dashboard_data import (
 from src.detectors.anomaly_detector import AnomalyDetector
 from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
 import ui_theme
+from pdf_report import build_visual_pdf_bytes
 
 st.set_page_config(page_title="哈尔滨冰雪旅游服务设施供需诊断", layout="wide")
 
@@ -403,7 +404,7 @@ c3.markdown(
 
 # ---- 一键导出（首屏显眼位置）----
 with st.container(border=True, key="export"):
-    dl1, dl2 = st.columns(2)
+    dl1, dl2, dl3 = st.columns(3)
     with dl1:
         st.download_button(
             "导出指标明细 Excel",
@@ -415,6 +416,15 @@ with st.container(border=True, key="export"):
         )
     with dl2:
         st.download_button(
+            "导出可视化诊断报告 PDF",
+            icon=":material/picture_as_pdf:",
+            data=build_visual_pdf_bytes(df, method),
+            file_name=f"harbin_diagnosis_{method}.pdf",
+            mime="application/pdf",
+            key="dl_pdf",
+        )
+    with dl3:
+        st.download_button(
             "导出诊断报告 HTML",
             icon=":material/description:",
             data=build_html_summary(df),
@@ -422,7 +432,9 @@ with st.container(border=True, key="export"):
             mime="text/html",
             key="dl_html",
         )
-    st.caption("Excel 含指标明细/数据质量审计/指标权重三个 sheet；HTML 为 Top 10 错配锚点摘要报告。")
+    st.caption(
+        "三连导出方案：Excel（含指标明细/质量审计/权重）；PDF（含高精可视化图表、KPI 与策略简报）；HTML（Top 10 错配摘要报告）。"
+    )
 
 with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/menu_book:"):
     st.markdown(
