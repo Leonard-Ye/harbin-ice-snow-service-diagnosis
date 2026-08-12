@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""可视化 PDF 报告生成器：渲染高精度图表 (SMI Top10 + 供需象限图) + 排版级 PDF 报告。"""
+"""可视化 PDF 报告生成器：融合 0624 终稿报告文字，构建排版级多源诊断报告。"""
 import io
 import os
 import matplotlib
@@ -45,14 +45,14 @@ plt.rcParams["axes.unicode_minus"] = False
 def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:
     """渲染 SMI 错配 Top 10 水平渐变柱状图。"""
     sub = df.sort_values("SMI", ascending=True).tail(10)
-    fig, ax = plt.subplots(figsize=(7.5, 3.8), dpi=200)
+    fig, ax = plt.subplots(figsize=(7.2, 3.4), dpi=200)
     fig.patch.set_facecolor("#FFFFFF")
     ax.set_facecolor("#F8FAFC")
 
     # 渐变配色：SMI 高（错配重）→ 珊瑚红，SMI 低 → 冰蓝
     smi_vals = sub["SMI"].values
     norm_vals = (smi_vals - smi_vals.min()) / (smi_vals.max() - smi_vals.min() + 1e-9)
-    bar_colors = [plt.cm.coolwarm(0.3 + 0.6 * v) for v in norm_vals]
+    bar_colors = [plt.cm.coolwarm(0.25 + 0.65 * v) for v in norm_vals]
 
     bars = ax.barh(sub["anchor_name"], sub["SMI"], color=bar_colors, height=0.6, edgecolor="none")
     
@@ -60,15 +60,15 @@ def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:
     for bar in bars:
         w = bar.get_width()
         ax.text(w + 0.05, bar.get_y() + bar.get_height() / 2, f"{w:.2f}",
-                va="center", ha="left", fontsize=9, fontweight="bold", color="#334155")
+                va="center", ha="left", fontsize=8.5, fontweight="bold", color="#334155")
 
-    ax.set_title("SMI 服务错配排名 Top 10 锚点", fontsize=12, fontweight="bold", pad=12, color="#0F172A")
-    ax.set_xlabel("SMI 错配指数（正值说明需求/风险远大于供给）", fontsize=9, color="#64748B")
+    ax.set_title("SMI 服务错配排名 Top 10 锚点", fontsize=11, fontweight="bold", pad=10, color="#0F172A")
+    ax.set_xlabel("SMI 错配指数（正值说明需求/风险远大于供给）", fontsize=8.5, color="#64748B")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_color("#E2E8F0")
     ax.spines["bottom"].set_color("#E2E8F0")
-    ax.grid(axis="x", linestyle="--", alpha=0.5, color="#CBD5E1")
+    ax.grid(axis="x", linestyle="--", alpha=0.4, color="#CBD5E1")
     plt.tight_layout()
 
     buf = io.BytesIO()
@@ -80,7 +80,7 @@ def generate_smi_chart_png(df: pd.DataFrame) -> io.BytesIO:
 
 def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
     """渲染 DHI × SSI 供需四象限散点图（包含 4 象限软底色区）。"""
-    fig, ax = plt.subplots(figsize=(7.5, 4.2), dpi=200)
+    fig, ax = plt.subplots(figsize=(7.2, 3.8), dpi=200)
     fig.patch.set_facecolor("#FFFFFF")
     ax.set_facecolor("#FFFFFF")
 
@@ -94,8 +94,8 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
     ax.fill_between([0, max_x], min_y, 0, color="#D1FAE5", alpha=0.45, label="低需求高供给（分流承接区）")
 
     # 象限参考线
-    ax.axhline(0, color="#94A3B8", linestyle="--", linewidth=1.0)
-    ax.axvline(0, color="#94A3B8", linestyle="--", linewidth=1.0)
+    ax.axhline(0, color="#94A3B8", linestyle="--", linewidth=0.9)
+    ax.axvline(0, color="#94A3B8", linestyle="--", linewidth=0.9)
 
     # 散点渲染
     type_color_map = {
@@ -109,16 +109,16 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
 
     for diag_type, group in df.groupby("diagnosis"):
         c = type_color_map.get(diag_type, "#64748B")
-        ax.scatter(group["SSI"], group["DHI"], label=diag_type, color=c, s=70, edgecolors="white", linewidth=1, zorder=5)
+        ax.scatter(group["SSI"], group["DHI"], label=diag_type, color=c, s=65, edgecolors="white", linewidth=0.8, zorder=5)
         for _, row in group.iterrows():
-            ax.annotate(row["anchor_name"], (row["SSI"], row["DHI"]), fontsize=7.5, xytext=(4, 4), textcoords="offset points", color="#1E293B")
+            ax.annotate(row["anchor_name"], (row["SSI"], row["DHI"]), fontsize=7, xytext=(3, 3), textcoords="offset points", color="#1E293B")
 
-    ax.set_title("需求热度 DHI × 服务供给 SSI 供需诊断象限", fontsize=12, fontweight="bold", pad=12, color="#0F172A")
-    ax.set_xlabel("SSI 服务供给指数 (0=样本均值)", fontsize=9, color="#64748B")
-    ax.set_ylabel("DHI 需求热度指数 (0=样本均值)", fontsize=9, color="#64748B")
+    ax.set_title("需求热度 DHI × 服务供给 SSI 供需诊断象限", fontsize=11, fontweight="bold", pad=10, color="#0F172A")
+    ax.set_xlabel("SSI 服务供给指数 (0=样本均值)", fontsize=8.5, color="#64748B")
+    ax.set_ylabel("DHI 需求热度指数 (0=样本均值)", fontsize=8.5, color="#64748B")
     ax.set_xlim(min_x, max_x)
     ax.set_ylim(min_y, max_y)
-    ax.legend(loc="upper left", fontsize=7.5, framealpha=0.95, facecolor="#FFFFFF")
+    ax.legend(loc="upper left", fontsize=7, framealpha=0.95, facecolor="#FFFFFF")
     ax.grid(True, linestyle=":", alpha=0.3, color="#94A3B8")
     plt.tight_layout()
 
@@ -129,128 +129,165 @@ def generate_quadrant_chart_png(df: pd.DataFrame) -> io.BytesIO:
     return buf
 
 
-# ---------------------------------------------------------------- Visual PDF 文档排版
+# ---------------------------------------------------------------- Visual PDF 排版
 def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
-    """生成包含高精图表与精美排版的 Visual PDF 报告字节流。"""
+    """生成充实排版、无怪异留白的专业 PDF 报告字节流。"""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
-        leftMargin=36,
-        rightMargin=36,
-        topMargin=36,
-        bottomMargin=36,
+        leftMargin=32,
+        rightMargin=32,
+        topMargin=32,
+        bottomMargin=32,
     )
 
     styles = getSampleStyleSheet()
 
-    # 极光冰雪主题 Style 族
     title_style = ParagraphStyle(
         "DocTitle",
         parent=styles["Heading1"],
         fontName=FONT_NAME,
-        fontSize=20,
-        leading=24,
+        fontSize=18,
+        leading=22,
         textColor=colors.HexColor("#0F172A"),
-        spaceAfter=6,
+        spaceAfter=4,
     )
     meta_style = ParagraphStyle(
         "DocMeta",
         parent=styles["Normal"],
         fontName=FONT_NAME,
-        fontSize=9,
-        leading=12,
+        fontSize=8.5,
+        leading=11,
         textColor=colors.HexColor("#64748B"),
-        spaceAfter=14,
+        spaceAfter=10,
     )
     h2_style = ParagraphStyle(
         "SectionH2",
         parent=styles["Heading2"],
         fontName=FONT_NAME,
-        fontSize=13,
-        leading=16,
+        fontSize=12,
+        leading=15,
         textColor=colors.HexColor("#0284C7"),
-        spaceBefore=12,
-        spaceAfter=8,
+        spaceBefore=10,
+        spaceAfter=6,
     )
     body_style = ParagraphStyle(
         "BodyDark",
         parent=styles["Normal"],
         fontName=FONT_NAME,
-        fontSize=9.5,
-        leading=14,
+        fontSize=8.5,
+        leading=13.5,
         textColor=colors.HexColor("#334155"),
-        spaceAfter=6,
+        spaceAfter=4,
     )
 
     story = []
 
-    # 1. 顶部 Header & 标题
-    story.append(Paragraph("哈尔滨冰雪旅游服务设施供需诊断简报", title_style))
+    # 1. 页眉标题与元数据
+    story.append(Paragraph("哈尔滨冰雪旅游服务设施供需诊断分析简报", title_style))
     method_name = "熵权法（数据驱动）" if method == "entropy" else "等权（报告基线口径）"
     now_str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
     story.append(
         Paragraph(
-            f"<b>数据源：</b>高德·携程·大众点评·小红书 | <b>赋权方案：</b>{method_name} | <b>导出时间：</b>{now_str}",
+            f"<b>多源数据：</b>高德 POI (5.8万) · 携程住宿 · 大众点评评论 · 小红书文本 (3.3万) | <b>权重口径：</b>{method_name} | <b>时间：</b>{now_str}",
             meta_style,
         )
     )
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#38BDF8"), spaceAfter=12))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor("#38BDF8"), spaceAfter=10))
 
-    # 2. 核心 KPI 汇总卡片
+    # 2. 核心 KPI 汇总矩阵
     kpi_data = [
         [
-            Paragraph("<b>数据记录规模</b><br/><font size=11 color='#0284C7'><b>8 万+ 条</b></font>", body_style),
-            Paragraph("<b>核心文旅锚点</b><br/><font size=11 color='#0284C7'><b>20 个核心区</b></font>", body_style),
-            Paragraph("<b>自研诊断指标</b><br/><font size=11 color='#0284C7'><b>5 项 (SMI/DHI/SSI)</b></font>", body_style),
-            Paragraph("<b>主要错配类型</b><br/><font size=11 color='#EF4444'><b>设施不足/高峰承载</b></font>", body_style),
+            Paragraph("<b>数据记录规模</b><br/><font size=10 color='#0284C7'><b>8 万+ 条记录</b></font>", body_style),
+            Paragraph("<b>核心文旅锚点</b><br/><font size=10 color='#0284C7'><b>20 个核心区</b></font>", body_style),
+            Paragraph("<b>自研诊断指标</b><br/><font size=10 color='#0284C7'><b>5 项 (DHI/SSI/SMI)</b></font>", body_style),
+            Paragraph("<b>主要错配类型</b><br/><font size=10 color='#EF4444'><b>设施不足/高峰承载</b></font>", body_style),
         ]
     ]
-    t_kpi = Table(kpi_data, colWidths=[130, 130, 130, 130])
+    t_kpi = Table(kpi_data, colWidths=[132, 132, 132, 135])
     t_kpi.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#E2E8F0")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-                ("TOPPADDING", (0, 0), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-                ("LEFTPADDING", (0, 0), (-1, -1), 10),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
             ]
         )
     )
     story.append(t_kpi)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 8))
 
-    # 3. 核心结论与分类策略
-    story.append(Paragraph("一、 核心诊断结论与优化策略", h2_style))
-    conclusions = [
-        "<b>1. 设施不足型（松花江 · 冰雪大世界 · 太阳岛）：</b>高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），建议优先补短途接驳与防寒休憩设施。",
-        "<b>2. 高峰承载型（中央大街 · 圣索菲亚教堂）：</b>设施供给充足但高峰期排队与价格压力突出，应侧重客流分流与排队组织而非盲目增建设施。",
-        "<b>3. 局部风险与分流潜力型（果戈里大街 · 中东铁路桥）：</b>果戈里大街排队痛点显著需定点整改；低需求高供给锚点具备承接核心区外溢客流的潜力。",
+    # 3. 参考 0624 终稿整理的充实诊断结论与分区优化策略
+    story.append(Paragraph("一、 多源融合诊断结论与分区优化策略（参考 0624 研究终稿）", h2_style))
+
+    strategies = [
+        (
+            "<b>1. 高需求—低供给重点关注区（近场设施与交通接驳）</b>",
+            "松花江冰雪嘉年华、冰雪大世界、太阳岛等锚点呈现极高游客关注度，但周边 3km 住宿、餐饮及交通基础设施供给离群偏低。优化重点在于补充近场短途接驳、设置临时防寒休憩暖棚、移动卫生间与夜间疏散应急交通，避免设施缺口影响游客体验。"
+        ),
+        (
+            "<b>2. 高需求—高供给高承载区（高峰管理与客流分流）</b>",
+            "中央大街、圣索菲亚教堂等老城核心锚点设施总量充足，但冰雪旺季高峰期面临巨大的承载与排队压力。优化核心在于推行预约分流、排队时长可视化、价格合规监管与步行空间流线组织，引导客流向周边次级节点疏散，而非盲目增建设施。"
+        ),
+        (
+            "<b>3. 局部体验风险与外溢承接区（定点整改与副中心分流）</b>",
+            "果戈里大街等锚点体验风险指数（ERI）较高，需聚焦排队与交通痛点开展定点整改；中东铁路桥、中华巴洛克等低需求高供给锚点，基础设施充裕，具备承接核心商圈外溢客流的良好潜力，可作为精品游览替代线路节点。"
+        ),
+        (
+            "<b>4. 餐饮消费压力区（明码标价与线上取号）</b>",
+            "结合大众点评餐饮压力增强验证（ERI_plus），冰雪旅游旺季主要矛盾体现为热门商圈的价格感知与排队等待。建议推动热门餐饮商家推行线上取号预定与明码标价，并引导游客向哈西、群力等副中心商圈分流。"
+        ),
+        (
+            "<b>5. 多源数据动态监测机制（长效保障）</b>",
+            "建立面向冰雪季的多源数据动态监测机制，持续跟踪高德 POI 变化、携程住宿价格与空房、大众点评餐饮压力及小红书舆情痛点，动态更新 DHI、SSI、ERI 与 SMI 指标，为节假日高峰保障与应急设施投放提供及时科学依据。"
+        ),
     ]
-    for c in conclusions:
-        story.append(Paragraph(c, body_style))
 
+    strategy_table_rows = []
+    for title, text in strategies:
+        p_title = Paragraph(title, ParagraphStyle("StTitle", parent=body_style, fontSize=9, textColor=colors.HexColor("#0284C7"), leading=12))
+        p_text = Paragraph(text, body_style)
+        strategy_table_rows.append([p_title])
+        strategy_table_rows.append([p_text])
+
+    t_strat = Table(strategy_table_rows, colWidths=[531])
+    t_strat.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#E2E8F0")),
+                ("LINELEFT", (0, 0), (-1, -1), 3, colors.HexColor("#0284C7")),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+    story.append(t_strat)
     story.append(Spacer(1, 10))
 
     # 4. 可视化图表 1：SMI Top 10 柱状图
-    story.append(Paragraph("二、 服务错配 Top 10 锚点可视化", h2_style))
+    story.append(Paragraph("二、 SMI 服务错配 Top 10 锚点可视化", h2_style))
     chart1_buf = generate_smi_chart_png(df)
-    story.append(Image(chart1_buf, width=520, height=260))
+    story.append(Image(chart1_buf, width=530, height=240))
 
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 10))
 
     # 5. 可视化图表 2：DHI × SSI 四象限散点图
-    story.append(Paragraph("三、 需求热度 DHI × 服务供给 SSI 四象限矩阵", h2_style))
+    story.append(Paragraph("三、 需求热度 DHI × 服务供给 SSI 供需诊断象限", h2_style))
     chart2_buf = generate_quadrant_chart_png(df)
-    story.append(Image(chart2_buf, width=520, height=290))
+    story.append(Image(chart2_buf, width=530, height=270))
 
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 10))
 
     # 6. Top 10 锚点诊断明细表
-    story.append(Paragraph("四、 Top 10 服务错配锚点详细指标", h2_style))
+    story.append(Paragraph("四、 Top 10 服务错配锚点详细指标明细", h2_style))
     top10_df = df.sort_values("SMI", ascending=False).head(10)
     
     table_data = [["排名", "锚点名称", "SMI错配", "DHI需求", "SSI供给", "ERI风险", "诊断类型"]]
@@ -267,7 +304,7 @@ def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
             ]
         )
 
-    t_detail = Table(table_data, colWidths=[36, 110, 55, 55, 55, 55, 154])
+    t_detail = Table(table_data, colWidths=[35, 110, 55, 55, 55, 55, 166])
     t_detail.setStyle(
         TableStyle(
             [
@@ -279,8 +316,8 @@ def build_visual_pdf_bytes(df: pd.DataFrame, method: str) -> bytes:
                 ("ALIGN", (2, 0), (5, -1), "CENTER"),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
             ]
         )
     )
