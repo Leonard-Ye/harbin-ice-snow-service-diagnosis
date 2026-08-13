@@ -220,19 +220,18 @@ def apply_theme(theme: str) -> None:
     }}
 
     /* ---- 洞察卡片 (Bento Card) ---- */
-    /* 三卡等高（仅核心结论区）：flex:1 撑满（height:100% 在 flex 高度 auto 时无效），
-       用 container key 精确定位，不影响其他 columns 布局 */
-    [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] > div {{
-        display: flex !important;
-        flex-direction: column !important;
+    /* 三卡统一放在单个 HTML Grid 容器内，网格引擎保证三卡等宽等高；
+       窄屏（手机）自动降为单列，避免挤压 */
+    .insight-grid {{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin: 6px 0 10px;
     }}
-    [class*="st-key-insights_cards"] [data-testid="stHorizontalBlock"] > div > div {{
-        flex: 1 !important;
-    }}
-    [class*="st-key-insights_cards"] [data-testid="stElementContainer"],
-    [class*="st-key-insights_cards"] .stMarkdown,
-    [class*="st-key-insights_cards"] .stMarkdown > div {{
-        height: 100% !important;
+    @media (max-width: 720px) {{
+        .insight-grid {{
+            grid-template-columns: 1fr;
+        }}
     }}
     .insight-card {{
         background: {t['card_bg']};

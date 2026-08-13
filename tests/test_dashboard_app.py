@@ -182,15 +182,17 @@ def test_structured_clone_polyfill(app):
 
 
 def test_insight_cards_equal_height(app):
-    """核心结论三卡等高：container key 精确定位 + flex:1 撑满（不依赖 height:100%）。"""
+    """核心结论三卡应合并为单个 HTML Grid（网格 stretch 保证等宽等高）+ 窄屏单列。"""
     src = open(APP_PATH, encoding="utf-8").read()
-    assert 'with st.container(key="insights_cards")' in src, "核心结论需用带 key 的 container 包裹"
+    assert 'class="insight-grid"' in src, "三卡应在单个 insight-grid HTML 容器内"
+    assert src.count('class="insight-card"') >= 3
     theme_src = open(
         os.path.join(ROOT, "dashboard", "ui_theme.py"), encoding="utf-8"
     ).read()
-    assert "st-key-insights_cards" in theme_src
-    assert "flex: 1 !important" in theme_src
-    assert "flex-direction: column !important" in theme_src
+    assert ".insight-grid" in theme_src
+    assert "grid-template-columns: repeat(3, 1fr)" in theme_src, "CSS Grid 等宽"
+    assert "@media (max-width: 720px)" in theme_src, "窄屏降为单列"
+    assert "st-key-insights_cards" not in theme_src, "旧的 st.columns hack 应移除"
 
 
 def test_background_zoning_present(app):

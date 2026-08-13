@@ -408,29 +408,29 @@ th{{background:#f0f4f8;}} h1{{font-size:20px;}} .note{{color:#666;font-size:12px
 
 # ---- 核心结论（首屏，HR 30 秒看懂）----
 st.markdown('<div class="section-title">核心结论</div>', unsafe_allow_html=True)
-with st.container(key="insights_cards"):
-    c1, c2, c3 = st.columns(3)
-    c1.markdown(
-    '<div class="insight-card"><div class="tag">类型 ① 设施不足型</div>'
-    '<div class="title">松花江 · 冰雪大世界 · 太阳岛</div>'
-    '<div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），'
-    "优先补短途接驳与防寒休憩设施。</div></div>",
+# 三卡合并为单个 HTML Grid（脱离 st.columns 布局，网格引擎保证三卡等高）
+st.markdown(
+    """
+    <div class="insight-grid">
+      <div class="insight-card">
+        <div class="tag">类型 ① 设施不足型</div>
+        <div class="title">松花江 · 冰雪大世界 · 太阳岛</div>
+        <div class="body">高需求但近场服务薄弱（住宿/餐饮/交通供给离群低值），优先补短途接驳与防寒休憩设施。</div>
+      </div>
+      <div class="insight-card">
+        <div class="tag">类型 ② 高峰承载型</div>
+        <div class="title">中央大街 · 圣索菲亚教堂</div>
+        <div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织而非增加设施。</div>
+      </div>
+      <div class="insight-card">
+        <div class="tag">类型 ③ 局部风险与分流</div>
+        <div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>
+        <div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备承接核心区外溢的潜力。</div>
+      </div>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
-    c2.markdown(
-        '<div class="insight-card"><div class="tag">类型 ② 高峰承载型</div>'
-        '<div class="title">中央大街 · 圣索菲亚教堂</div>'
-        '<div class="body">设施供给充足但高峰排队/价格压力突出，需客流分流与排队组织'
-        "而非增加设施。</div></div>",
-        unsafe_allow_html=True,
-    )
-    c3.markdown(
-        '<div class="insight-card"><div class="tag">类型 ③ 局部风险与分流</div>'
-        '<div class="title">果戈里排队压力 · 中东铁路桥承接潜力</div>'
-        '<div class="body">局部锚点体验风险高（定点整改）；低需求高供给锚点具备'
-        "承接核心区外溢的潜力。</div></div>",
-        unsafe_allow_html=True,
-    )
 
 # ---- 一键导出（首屏显眼位置）----
 with st.container(border=True, key="export"):
