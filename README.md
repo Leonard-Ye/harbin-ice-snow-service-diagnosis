@@ -2,6 +2,10 @@
 
 大一年度项目作品 · 多源异构数据融合 · 空间供需错配诊断
 
+**在线交互看板**（Streamlit Cloud，可直接体验）：
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://harbin-ice-snow-service-diagnosis-zbfr7jfaxvwd3rxkau9sgj.streamlit.app)
+
 ## 一句话简介
 
 基于 4 类异构数据源（**高德 POI / 携程住宿 / 大众点评餐饮评论 / 小红书舆情**，累计 8 万+ 条记录），通过 **POI 锚点对齐**统一多源空间参照系，自研 5 项综合指标（**DHI / SSI / ERI / ERI_plus / SMI**），对哈尔滨冰雪旅游 **20 个核心文旅锚点**进行供需错配空间诊断，输出分区分类的服务设施优化策略。

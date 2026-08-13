@@ -35,6 +35,8 @@ streamlit run app.py
 
 ## 部署到 Streamlit Cloud（免费）
 
+**已部署实例**：https://harbin-ice-snow-service-diagnosis-zbfr7jfaxvwd3rxkau9sgj.streamlit.app
+
 1. 将本仓库推送到 GitHub（`git remote add origin <你的仓库地址> && git push -u origin main`）。
 2. 登录 <https://share.streamlit.io> → New app → 选择仓库。
 3. 配置：
