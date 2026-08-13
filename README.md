@@ -1,6 +1,6 @@
 # 基于多源异构数据的哈尔滨冰雪经济服务设施优化研究
 
-大一年度项目结题作品 · 多源异构数据融合 · 空间供需错配诊断
+大一年度项目作品 · 多源异构数据融合 · 空间供需错配诊断
 
 ## 一句话简介
 
@@ -31,9 +31,8 @@
 ├── analysis/        # 多源融合分析核心脚本（融合计算 / 图表 / GIS 制图）
 ├── dashboard/       # Streamlit 交互看板（app + 数据层 + 主题 + PDF 报告）
 ├── outputs/         # 核心诊断图（SMI 排名 / 供需象限 / GIS 空间分布等）
-├── docs/            # 项目报告 / 简历描述 / 审查文档
 ├── src/             # 工程化模块（MetricsEngine 指标引擎 / AnomalyDetector 异常检测）
-├── tests/           # pytest 单元测试（44 用例）
+├── tests/           # pytest 单元测试
 ├── .streamlit/      # Streamlit 原生主题配置
 ├── README.md
 └── requirements*.txt
@@ -99,7 +98,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 
 所有指标均针对 **20 个核心锚点**做样本内相对比较（非绝对水平）。指标内部权重支持两种方案（Dashboard 侧边栏可切换）：
 
-- **等权（equal）**：与结题报告口径逐值一致，用于数值回归验证。
+- **等权（equal）**：与研究报告口径逐值一致，用于数值回归验证。
 - **熵权法（entropy）**：min-max 归一化 → 信息熵 → 差异系数 → 权重；离散度大（信息量大）的维度权重更高，常数列权重为 0。
 
 | 指标 | 含义 | 计算要点 |
@@ -116,7 +115,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 - **工程化模块与测试**：`src/`（MetricsEngine / AnomalyDetector）、`tests/`（15 个 pytest 用例）
 - **核心诊断图**：`outputs/`（SMI 排名、供需象限、痛点热力图、GIS 分布图、多尺度敏感性）
 - **方法审计**：`analysis/V22_method_audit_report.md`（数据分级 A/B/F、双层使用架构、因果规避声明）
-- **结题报告**：`前中后期文档汇总/0624基于多元大数据的哈尔滨冰雪经济服务设施优化策略研究.docx`（docx 未入库）
+- **研究报告**：`前中后期文档汇总/0624基于多元大数据的哈尔滨冰雪经济服务设施优化策略研究.docx`（docx 未入库，可向作者索取）
 
 ## 关联工程
 
@@ -124,7 +123,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 
 ## 已知事项（诚实声明）
 
-1. **SSI 口径**：代码（MetricsEngine）显式纳入六类设施（含购物、医疗）且权重可配置；结题报告正文表述为四类主类——报告文本待统一（指标结果未变）。
+1. **SSI 口径**：代码（MetricsEngine）显式纳入六类设施（含购物、医疗）且权重可配置；研究报告正文表述为四类主类——报告文本待统一（指标结果未变）。
 2. 用当前 seaborn 版本重跑 `31` 时，`supply_demand_quadrant.png` 布局与报告版本存在细微差异（库版本所致）。
 3. 大众点评入样样本为"评分 ≥ 3.5 且经营 ≥ 3 年"子集，存在幸存者偏差，因此仅作为**压力验证层**而非全域供给主来源。
 4. 20 个核心锚点由人工白名单复核产出（见 `30` 脚本 `WHITELIST_ANCHORS` / `ALIAS_MAP`），2 个高频打卡 POI 因坐标异常被剔除。
