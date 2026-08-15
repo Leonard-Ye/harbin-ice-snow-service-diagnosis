@@ -6,6 +6,13 @@
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://harbin-ice-snow-service-diagnosis-zbfr7jfaxvwd3rxkau9sgj.streamlit.app)
 
+<p align="center">
+  <a href="https://harbin-ice-snow-service-diagnosis-zbfr7jfaxvwd3rxkau9sgj.streamlit.app" target="_blank">
+    <img src="assets/dashboard_preview.png" alt="哈尔滨冰雪旅游服务设施供需诊断系统看板预览" width="100%" />
+  </a>
+</p>
+<p align="center"><em>▲ 点击上方预览图可直接跳转进入在线 Streamlit 交互看板</em></p>
+
 ## 一句话简介
 
 基于 4 类异构数据源（**高德 POI / 携程住宿 / 大众点评餐饮评论 / 小红书舆情**，累计 8 万+ 条记录），通过 **POI 锚点对齐**统一多源空间参照系，自研 5 项综合指标（**DHI / SSI / ERI / ERI_plus / SMI**），对哈尔滨冰雪旅游 **20 个核心文旅锚点**进行供需错配空间诊断，输出分区分类的服务设施优化策略。
@@ -32,6 +39,7 @@
 ## 目录结构
 
 ```
+├── assets/          # 看板与项目展示图片资源
 ├── analysis/        # 多源融合分析核心脚本（融合计算 / 图表 / GIS 制图）
 ├── dashboard/       # Streamlit 交互看板（app + 数据层 + 主题 + PDF 报告）
 ├── outputs/         # 核心诊断图（SMI 排名 / 供需象限 / GIS 空间分布等）
