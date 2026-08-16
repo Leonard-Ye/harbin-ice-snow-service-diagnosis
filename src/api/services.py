@@ -7,10 +7,9 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from dashboard.report_builders import build_audit_df, build_excel_bytes, build_html_summary
+from dashboard.report_builders import build_excel_bytes, build_html_summary
 from dashboard.pdf_report import build_visual_pdf_bytes
 from dashboard.dashboard_data import (
-    PAIN_CN,
     add_diagnosis,
     full_table,
     get_weight_sets,
@@ -19,7 +18,7 @@ from dashboard.dashboard_data import (
     strategy_for,
 )
 from src.detectors.anomaly_detector import AnomalyDetector
-from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS, MetricsEngine
+from src.engines.metrics_engine import PAIN_RATE_COLS, MetricsEngine
 from src.pipeline.orchestrator import AUDIT_COLS, LOG_COLS
 
 

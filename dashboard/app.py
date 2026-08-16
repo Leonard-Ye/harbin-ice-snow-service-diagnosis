@@ -4,8 +4,6 @@
 运行: streamlit run dashboard/app.py
 数据: analysis/V30_Multi_Source_Fusion_R2/*.csv（聚合结果，不含原始评论/笔记）
 """
-import io
-import json
 import os
 
 import numpy as np
@@ -26,14 +24,12 @@ from dashboard_data import (
     full_table,
     full_table_remote,
     get_scale_profile,
-    get_weight_sets,
     load_scale,
     resolve_selected_anchor,
     strategy_for,
 )
 from backend_client import BackendClient
 from src.detectors.anomaly_detector import AnomalyDetector
-from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
 from src.services.table_audit import TableAuditError, audit_tabular_bytes
 from src.storage.run_store import RunStore
 import ui_theme

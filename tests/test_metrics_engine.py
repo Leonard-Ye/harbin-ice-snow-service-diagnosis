@@ -2,7 +2,6 @@
 """MetricsEngine 单元测试：基线回归 / 熵权法 / 权重与半径可配置。"""
 import os
 
-import numpy as np
 import pandas as pd
 import pytest
 
