@@ -66,6 +66,18 @@ def test_full_pipeline_smoke_on_sample_data(tmp_path):
     assert latest.status == "succeeded"
 
 
+def test_pipeline_run_accepts_external_run_id(tmp_path):
+    cfg = _fixture_config(tmp_path)
+    result = PipelineRunner(cfg).run(run_id="fixed-job-id")
+    assert result.run_id == "fixed-job-id"
+    from src.storage.run_store import RunStore
+
+    store = RunStore(cfg.db_path)
+    store.initialize()
+    assert store.get_run("fixed-job-id") is not None
+    store.close()
+
+
 def test_missing_raw_data_raises_gracefully(tmp_path):
     cfg = PipelineConfig(
         project_root=ROOT,

@@ -159,8 +159,9 @@ class PipelineRunner:
             pass
 
     # ---------------------------------------------------------------- 主流程
-    def run(self) -> PipelineRunResult:
-        run_id = uuid4().hex
+    def run(self, run_id: str | None = None) -> PipelineRunResult:
+        """执行 Pipeline。``run_id`` 允许由外部 Job 队列指定，保证 API 契约一致。"""
+        run_id = run_id or uuid4().hex
         started_at = self._now()
         result = PipelineRunResult(
             run_id=run_id,

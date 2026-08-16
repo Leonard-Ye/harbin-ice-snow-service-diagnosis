@@ -68,7 +68,7 @@ class PipelineJobManager:
             try:
                 cfg = PipelineConfig.from_toml(settings.pipeline_config_path)
                 cfg.method = job["method"]
-                result = PipelineRunner(cfg).run()
+                result = PipelineRunner(cfg).run(run_id=job["run_id"])
                 job.update(
                     {
                         "status": result.status,
