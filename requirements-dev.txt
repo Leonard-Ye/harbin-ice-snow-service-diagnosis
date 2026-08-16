@@ -1,3 +1,4 @@
-# 开发/测试依赖（pytest）
+# 开发/测试依赖（pytest + FastAPI TestClient 所需的 httpx）
 # 安装: pip install -r requirements-dev.txt
-pytest>=8.0
+pytest==9.0.3
+httpx==0.28.1
