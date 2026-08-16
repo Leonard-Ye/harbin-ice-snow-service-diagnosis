@@ -66,6 +66,16 @@ def get_run(run_id: str) -> PipelineRunStatus:
             error=result["error"] or result["store_error"],
             artifacts=result.get("artifacts", []),
         )
+    if job and job.get("status"):
+        # Runner 抛异常但未产生 result 时，仍可从内存 Job 返回状态；
+        # 持久化任务最终以 SQLite 记录为准。
+        return PipelineRunStatus(
+            run_id=run_id,
+            status=str(job["status"]),
+            method=str(job.get("method", "")),
+            main_scale=3,
+            error=job.get("error"),
+        )
 
     store = _store()
     try:

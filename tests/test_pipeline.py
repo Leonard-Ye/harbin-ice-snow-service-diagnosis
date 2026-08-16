@@ -79,3 +79,14 @@ def test_missing_raw_data_raises_gracefully(tmp_path):
     runner = PipelineRunner(cfg)
     with pytest.raises(RawDataUnavailableError):
         runner.run()
+
+    # 失败任务必须落库，保证 API 轮询可查到失败原因
+    from src.storage.run_store import RunStore
+
+    store = RunStore(cfg.db_path)
+    store.initialize()
+    latest = store.latest_run()
+    store.close()
+    assert latest is not None
+    assert latest["status"] == "failed"
+    assert "原始数据缺失" in (latest["error"] or "")

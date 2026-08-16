@@ -142,6 +142,22 @@ class PipelineRunner:
             "ctrip": pd.read_csv(self.config.ctrip_path),
         }
 
+
+    def _persist_failure(self, run_id: str, started_ts: float, error: str) -> None:
+        """失败任务也必须落库，保证 /pipeline/runs/{id} 可查询。"""
+        try:
+            self.store.finish_run(
+                run_id=run_id,
+                status="failed",
+                finished_at=self._now(),
+                duration_ms=int((time.monotonic() - started_ts) * 1000),
+                input_sha256="",
+                output_sha256="",
+                error=error,
+            )
+        except Exception:
+            pass
+
     # ---------------------------------------------------------------- 主流程
     def run(self) -> PipelineRunResult:
         run_id = uuid4().hex
@@ -153,14 +169,6 @@ class PipelineRunner:
             main_scale=self.config.main_scale,
             started_at=started_at,
         )
-        missing = self.config.missing_inputs()
-        if missing:
-            self.store.close()
-            names = ", ".join(str(p) for p in missing)
-            raise RawDataUnavailableError(
-                f"原始数据缺失，无法执行全量 Pipeline: {names}"
-            )
-
         started_ts = time.monotonic()
 
         try:
@@ -173,6 +181,14 @@ class PipelineRunner:
             )
         except Exception as exc:  # DB 异常不应阻断 Pipeline
             result.store_error = str(exc)
+
+        missing = self.config.missing_inputs()
+        if missing:
+            names = ", ".join(str(p) for p in missing)
+            error = f"原始数据缺失，无法执行全量 Pipeline: {names}"
+            self._persist_failure(run_id, started_ts, error)
+            self.store.close()
+            raise RawDataUnavailableError(error)
 
         input_paths = [
             self.config.xhs_path,
