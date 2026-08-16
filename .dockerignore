@@ -1,0 +1,31 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.reasonix
+.gemini_rules
+
+# 原始数据与隐私数据（绝不进入镜像）
+00_原始基座数据/
+01_早期单源分析_归档/
+03_方法加固与审计模块/
+analysis/V25_Full_Mapping/
+analysis/V27_Amap_Expansion/
+analysis/V22_02_SMI_Model/
+全分析数据.zip
+temp_extract/
+_archive_patches/
+前中后期文档汇总/
+xiaohongshu_scraper/
+
+# 开发过程产物
+data/
+outputs/*.svg
+*.pdf
+tests/
+scripts/
+assets/
+docs/
