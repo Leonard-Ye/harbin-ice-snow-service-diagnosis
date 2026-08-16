@@ -15,9 +15,10 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY requirements.txt ./
+# 使用完整 lock 文件保证镜像可复现（由 Linux py311 运行环境生成）
+COPY requirements.lock.txt ./
 ARG PIP_INDEX_URL=https://pypi.org/simple
-RUN pip install --timeout 60 --retries 5 -i ${PIP_INDEX_URL} -r requirements.txt
+RUN pip install --timeout 60 --retries 5 -i ${PIP_INDEX_URL} -r requirements.lock.txt
 
 # 只复制运行所需目录，原始数据（00_原始基座数据等）绝不进入镜像
 COPY src ./src
