@@ -14,6 +14,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -21,6 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.api.config import settings  # noqa: E402
 from src.api.routers import ai, anchors, health, ingest, metrics, pipeline, quality, reports  # noqa: E402
+from src.api.swagger_ui import DESCRIPTIONS, register_docs_routes  # noqa: E402
 from src.storage.run_store import RunStore  # noqa: E402
 
 
@@ -40,11 +42,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
-    description=(
-        "多源数据自动化与分析平台 API。\n\n"
-        "提供锚点指标、数据质量审计、自动化 Pipeline 触发、通用表格体检与报表下载。\n"
-        "全部指标为 20 个核心锚点样本内 Z-score 相对值（0=样本均值）。"
-    ),
+    description=DESCRIPTIONS["zh"] + "\n\n---\n\n" + DESCRIPTIONS["en"],
+    docs_url=None,
+    redoc_url=None,
     lifespan=lifespan,
 )
 
@@ -64,6 +64,9 @@ app.include_router(pipeline.router)
 app.include_router(ingest.router)
 app.include_router(reports.router)
 app.include_router(ai.router)
+
+app.mount("/static", StaticFiles(directory=Path(__file__).resolve().parent / "static"), name="static")
+register_docs_routes(app)
 
 
 @app.get("/", include_in_schema=False)

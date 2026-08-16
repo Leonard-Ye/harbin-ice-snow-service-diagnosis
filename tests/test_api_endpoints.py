@@ -14,6 +14,35 @@ def client():
         yield c
 
 
+def test_swagger_docs_zh(client):
+    resp = client.get("/docs")
+    assert resp.status_code == 200
+    assert "智能多源数据自动化与分析平台" in resp.text
+    assert "lang-toggle" in resp.text
+    assert "defaultModelsExpandDepth" in resp.text
+
+
+def test_swagger_docs_en(client):
+    resp = client.get("/docs?lang=en")
+    assert resp.status_code == 200
+    assert "Intelligent Multi-Source Data Platform" in resp.text
+
+
+def test_swagger_favicon(client):
+    resp = client.get("/static/swagger-favicon.svg")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("image/svg")
+
+
+def test_openapi_contains_examples(client):
+    resp = client.get("/openapi.json")
+    assert resp.status_code == 200
+    schema = resp.json()
+    health = schema["components"]["schemas"]["HealthResponse"]
+    assert "example" in health
+    assert health["example"]["status"] == "ok"
+
+
 def test_health(client):
     resp = client.get("/health")
     assert resp.status_code == 200
