@@ -18,8 +18,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.pipeline.config import PipelineConfig
-from src.pipeline.orchestrator import PipelineRunner
+from src.pipeline.config import PipelineConfig  # noqa: E402
+from src.pipeline.orchestrator import PipelineRunner  # noqa: E402
 
 BASELINE = ROOT / "analysis" / "V30_Multi_Source_Fusion_R2"
 
