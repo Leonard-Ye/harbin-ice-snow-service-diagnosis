@@ -39,31 +39,64 @@
 ## 目录结构
 
 ```
-├── assets/          # 看板与项目展示图片资源
 ├── analysis/        # 多源融合分析核心脚本（融合计算 / 图表 / GIS 制图）
-├── dashboard/       # Streamlit 交互看板（app + 数据层 + 主题 + PDF 报告）
+├── configs/         # Pipeline 运行配置（TOML）
+├── dashboard/       # Streamlit 交互看板（app + 数据层 + API Client + 报表 + 主题）
+├── docker/          # 多阶段 Dockerfile
 ├── outputs/         # 核心诊断图（SMI 排名 / 供需象限 / GIS 空间分布等）
-├── src/             # 工程化模块（MetricsEngine 指标引擎 / AnomalyDetector 异常检测）
-├── tests/           # pytest 单元测试
-├── .streamlit/      # Streamlit 原生主题配置
-├── README.md
-└── requirements*.txt
+├── scripts/         # 数值回归与部署辅助脚本
+├── src/
+│   ├── api/         # FastAPI 服务（RESTful 路由 + Pydantic 契约 + Job 队列）
+│   ├── cleaning/    # DataCleaner / DataProfiler
+│   ├── detectors/   # AnomalyDetector（IQR / Z-score / 坐标校验）
+│   ├── engines/     # MetricsEngine（等权 / 熵权法）
+│   ├── pipeline/    # AnchorAligner / BufferAggregator / RiskCalculator / PipelineRunner / CLI
+│   ├── services/    # 通用表格质量体检服务
+│   └── storage/     # SQLite RunStore（运行追溯 / 指标快照 / 异常事件）
+├── tests/           # pytest（含 fixtures 合成四源数据）
+├── .github/         # GitHub Actions CI
+├── ARCHITECTURE.md  # 架构演进说明
+└── docker-compose.yml
 ```
 
-## 快速开始（核心可复现链）
+## 快速开始
+
+### 方式一：Docker Compose 一键启动（推荐）
 
 ```powershell
-pip install -r requirements.txt
-cd analysis
-python 30_multi_source_fusion_v22_04R2.py   # 融合计算 → V30_Multi_Source_Fusion_R2/*.csv
-python 31_v22_05_chart_generator.py         # 生成 8 张核心诊断图 → ../outputs/
+docker compose up --build -d
 ```
 
-运行单元测试：
+- API 与 Swagger：http://localhost:8000/docs
+- Streamlit 看板：http://localhost:8501
+- 两个容器均带健康检查；SQLite 与运行产物保存在 named volume `platform_data`。
+- 如需国内镜像加速，复制 `.env.example` 为 `.env` 后运行。
+
+### 方式二：本地开发
 
 ```powershell
-pip install -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-dev.txt
+
+# 自动化 Pipeline（需本地原始数据，见下方合规说明）
+python -m src.pipeline.cli run --config configs/pipeline.toml --method equal
+
+# FastAPI
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Streamlit（未设置 BACKEND_URL 时自动使用本地引擎）
+streamlit run dashboard/app.py
+```
+
+运行单元测试（当前 70 个 collected tests）：
+
+```powershell
 python -m pytest tests/
+```
+
+仅回归 V30 基线（需本地原始数据）：
+
+```powershell
+python scripts/verify_v30_regression.py
 ```
 
 > **数据合规说明**：仓库**不包含**平台原始评论、笔记与 POI 原始抓取文件（版权与隐私原因）。
@@ -80,14 +113,20 @@ python -m pytest tests/
 
 | 模块 | 职责 | 关键能力 |
 |---|---|---|
+| `src/cleaning/data_cleaner.py` | `DataCleaner` 数据清洗 | 地点文本规整（引号/列表残迹）、通用去重与画像；parity 模式与原脚本逐值一致 |
+| `src/pipeline/anchor_aligner.py` | `AnchorAligner` 锚点对齐 | 白名单/别名映射/剔除规则/人工坐标修正（从 30 脚本原样抽取） |
+| `src/pipeline/buffer_aggregator.py` | `BufferAggregator` 空间聚合 | BallTree haversine 1/3/5km 缓冲圈六类设施统计 |
+| `src/pipeline/orchestrator.py` | `PipelineRunner` 全链路编排 | 加载→清洗→对齐→聚合→审计→指标→落盘；run_id + SHA256 可复现 |
 | `src/engines/metrics_engine.py` | `MetricsEngine` 供需诊断指标引擎 | 五指标计算（log1p+Z-score）；**权重方案可切换**：等权（equal，与 30 脚本基线逐值一致）或**熵权法**（entropy，按 20 锚点样本离散度客观赋权）；缓冲半径/指标权重/SMI 合成系数均可配置 |
 | `src/detectors/anomaly_detector.py` | `AnomalyDetector` 数据质量与异常检测 | IQR / Z-score 离群检测（右偏列支持 log1p 变换避免漏检）、经纬度极值校验、一键 `quality_report()` 数据质量审计表 |
+| `src/storage/run_store.py` | `RunStore` 运行元数据 | SQLite + WAL；pipeline_run / artifact / metric_snapshot / anomaly_event |
+| `src/api/` | FastAPI 服务层 | 12 个 REST 端点；Pydantic V2 契约；Pipeline Job 单飞队列；通用表格体检 |
 
 `dashboard_data.py` 内部改调 `MetricsEngine`，对外列结构不变（App 层零破坏）。审计结果：`data_quality_audit_v22_04R2.csv`（12 列审计，7 列检出离群——伏尔加庄园在六类供给上均为离群低值，果戈里大街排队率离群高值）。
 
 ## 交互式 Dashboard
 
-基于 V30 聚合数据的 Streamlit 单页应用（4 页签：总览地图 / 指标筛选 / 单锚点诊断 / 数据质量），支持**权重方案切换（等权/熵权）**与**一键导出 Excel / HTML / PDF 诊断报告**，数据不含原始评论，可直接公开部署：
+基于 V30 聚合数据的 Streamlit 单页应用（5 页签：总览地图 / 指标筛选 / 单锚点诊断 / 数据质量 / 平台运行），支持**权重方案切换（等权/熵权）**、**API 优先 + 本地降级双模式**与**一键导出 Excel / HTML / PDF 诊断报告**，数据不含原始评论，可直接公开部署：
 
 ```powershell
 pip install -r requirements.txt
@@ -124,7 +163,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 ## 核心产出
 
 - **指标与诊断结果**：`analysis/V30_Multi_Source_Fusion_R2/`（含 `data_quality_audit_v22_04R2.csv` 数据质量审计）
-- **工程化模块与测试**：`src/`（MetricsEngine / AnomalyDetector）、`tests/`（47 个 pytest collected tests）
+- **工程化模块与测试**：`src/`（MetricsEngine / AnomalyDetector）、`tests/`（70 个 pytest collected tests）
 - **核心诊断图**：`outputs/`（SMI 排名、供需象限、痛点热力图、GIS 分布图、多尺度敏感性）
 - **方法审计**：`analysis/V22_method_audit_report.md`（数据分级 A/B/F、双层使用架构、因果规避声明）
 - **研究报告**：`前中后期文档汇总/0624基于多元大数据的哈尔滨冰雪经济服务设施优化策略研究.docx`（docx 未入库，可向作者索取）
