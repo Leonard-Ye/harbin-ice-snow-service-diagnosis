@@ -109,7 +109,7 @@ Base URL：`http://localhost:8000`；交互文档：`/docs`。
 | UI | `tests/test_dashboard_app.py` | Streamlit AppTest + 静态契约 |
 | 私有 | `scripts/verify_v30_regression.py` | 本地全量原始数据逐文件比对 |
 
-当前 70 个 collected tests；CI 为 GitHub Actions（Python 3.11 + pytest + 双镜像构建）。
+当前 72 个 collected tests；CI 为 GitHub Actions（Python 3.11 + pytest + 双镜像构建）。
 
 ## 7. 范围边界（面试口径）
 

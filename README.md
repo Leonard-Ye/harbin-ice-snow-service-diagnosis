@@ -87,7 +87,7 @@ python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 streamlit run dashboard/app.py
 ```
 
-运行单元测试（当前 70 个 collected tests）：
+运行单元测试（当前 72 个 collected tests）：
 
 ```powershell
 python -m pytest tests/
@@ -163,7 +163,7 @@ pip install -r requirements-gis.txt   # geopandas / contextily / pyproj / Pillow
 ## 核心产出
 
 - **指标与诊断结果**：`analysis/V30_Multi_Source_Fusion_R2/`（含 `data_quality_audit_v22_04R2.csv` 数据质量审计）
-- **工程化模块与测试**：`src/`（MetricsEngine / AnomalyDetector）、`tests/`（70 个 pytest collected tests）
+- **工程化模块与测试**：`src/`（cleaning / pipeline / engines / detectors / storage / api / services）、`tests/`（72 个 pytest collected tests）
 - **核心诊断图**：`outputs/`（SMI 排名、供需象限、痛点热力图、GIS 分布图、多尺度敏感性）
 - **方法审计**：`analysis/V22_method_audit_report.md`（数据分级 A/B/F、双层使用架构、因果规避声明）
 - **研究报告**：`前中后期文档汇总/0624基于多元大数据的哈尔滨冰雪经济服务设施优化策略研究.docx`（docx 未入库，可向作者索取）
