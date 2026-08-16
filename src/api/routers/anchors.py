@@ -39,3 +39,13 @@ def get_anchor(anchor_name: str, method: str = Query("equal", pattern="^(equal|e
     except KeyError:
         raise HTTPException(status_code=404, detail={"code": "ANCHOR_NOT_FOUND", "message": f"锚点不存在: {anchor_name}"})
     return AnchorDetailResponse(**item)
+
+
+@router.get("/dataset/full")
+def full_dataset(method: str = Query("equal", pattern="^(equal|entropy)$")) -> dict:
+    """返回 Dashboard 所需的完整合并表（指标 + 诊断类型 + 痛点 + 餐饮压力）。"""
+    df = services.get_table(method)
+    from src.api.services import _clean
+
+    items = [_clean(record) for record in df.to_dict(orient="records")]
+    return {"method": method, "count": len(items), "items": items}

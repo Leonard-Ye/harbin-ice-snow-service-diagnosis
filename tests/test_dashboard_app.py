@@ -20,8 +20,8 @@ def test_app_runs_without_exception(app):
     assert not app.exception, [e.message for e in app.exception]
 
 
-def test_app_has_four_tabs(app):
-    assert len(app.tabs) == 4
+def test_app_has_five_tabs(app):
+    assert len(app.tabs) == 5
 
 
 def test_app_widget_structure(app):
@@ -36,7 +36,7 @@ def test_entropy_mode_switches_cleanly(app):
     app.radio[0].set_value("entropy")
     app.run()
     assert not app.exception, [e.message for e in app.exception]
-    assert len(app.tabs) == 4
+    assert len(app.tabs) == 5
 
 
 def test_map_layer_has_id(app):

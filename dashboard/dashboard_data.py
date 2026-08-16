@@ -154,3 +154,13 @@ DIAGNOSIS_ORDER = [
 
 def strategy_for(diagnosis: str) -> str:
     return STRATEGY_MAP.get(diagnosis, "")
+
+
+BACKEND_URL = os.getenv("BACKEND_URL", "").strip().rstrip("/")
+
+
+def full_table_remote(method: str = "equal") -> pd.DataFrame:
+    """从 FastAPI 后端读取完整合并表；后端不可达时抛 BackendUnavailable。"""
+    from backend_client import BackendClient
+
+    return BackendClient(BACKEND_URL).full_table(method)

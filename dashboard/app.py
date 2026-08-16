@@ -16,20 +16,26 @@ import pydeck as pdk
 import streamlit as st
 
 from dashboard_data import (
+    BACKEND_URL,
     DIAGNOSIS_ORDER,
     INDEX_COLS,
     PAIN_CN,
     PAIN_COLS,
+    PROJECT_ROOT,
     add_diagnosis,
     full_table,
+    full_table_remote,
     get_scale_profile,
     get_weight_sets,
     load_scale,
     resolve_selected_anchor,
     strategy_for,
 )
+from backend_client import BackendClient
 from src.detectors.anomaly_detector import AnomalyDetector
 from src.engines.metrics_engine import PAIN_RATE_COLS, SUPPLY_COLS
+from src.services.table_audit import TableAuditError, audit_tabular_bytes
+from src.storage.run_store import RunStore
 import ui_theme
 from pdf_report import build_visual_pdf_bytes
 from report_builders import AUDIT_COLS, LOG_COLS, build_audit_df, build_excel_bytes, build_html_summary, weights_comparison_df
@@ -60,8 +66,29 @@ st.components.v1.html(
 
 
 # ---------------------------------------------------------------- 数据
-@st.cache_data(show_spinner="加载 V30 多源融合聚合结果 ...")
+@st.cache_data(ttl=15, show_spinner=False)
+def _backend_online() -> bool:
+    """仅当显式设置 BACKEND_URL 时探测；默认本地模式，避免云端页卡顿。"""
+    if not BACKEND_URL:
+        return False
+    try:
+        BackendClient(BACKEND_URL, timeout=1.0).health()
+        return True
+    except Exception:
+        return False
+
+
+@st.cache_data(show_spinner="加载多源融合诊断数据 ...")
 def get_data(method: str) -> pd.DataFrame:
+    if BACKEND_URL:
+        try:
+            remote = full_table_remote(method=method)
+            if "diagnosis" not in remote.columns:
+                remote = add_diagnosis(remote)
+            return remote
+        except Exception:
+            # API 不可达时透明降级到本地引擎；下次 rerun 会自动重试
+            return add_diagnosis(full_table(method=method))
     return add_diagnosis(full_table(method=method))
 
 
@@ -87,6 +114,12 @@ with st.sidebar:
         "熵权法：min-max 归一化 → 信息熵 → 差异系数 → 权重。"
         "离散度大（信息量大）的维度获得更高权重；常数列权重为 0。"
     )
+    st.divider()
+    backend_online = _backend_online()
+    if backend_online:
+        st.caption(":material/cloud_done: 后端连接：API 服务已联通")
+    else:
+        st.caption(":material/cloud_off: 后端连接：本地引擎模式（未设置 BACKEND_URL 或服务未启动）")
 
 
 theme = ui_theme.get_theme()
@@ -420,12 +453,12 @@ with st.expander("研究叙事（30 秒看懂这个系统）", icon=":material/m
         "高峰承载型（中央大街，设施不缺但拥挤排队）；局部风险型（果戈里大街排队压力）。"
     )
 
-tab_overview, tab_explore, tab_anchor, tab_quality = st.tabs(
-    ["总览地图", "指标筛选与象限", "单锚点诊断", "数据质量"]
+tab_overview, tab_explore, tab_anchor, tab_quality, tab_platform = st.tabs(
+    ["总览地图", "指标筛选与象限", "单锚点诊断", "数据质量", "平台运行"]
 )
 st.caption(
     "页签导览：总览（人人都能看懂）· 指标筛选（分析师向）· 单锚点诊断（深挖）· "
-    "数据质量（技术细节，评审向）。"
+    "数据质量（技术细节，评审向）· 平台运行（自动化 Pipeline 与数据接入）。"
 )
 
 # ---- Tab 1 总览 ----
@@ -681,6 +714,108 @@ with tab_quality:
         "锚点在 1km 近场与 3km 短途服务圈的供给总量变化。增幅大说明服务依赖 3km 圈层（近场供给弱），"
         "是缓冲半径选择敏感性的直接证据。"
     )
+
+# ---- Tab 5 平台运行 ----
+with tab_platform:
+    st.subheader("平台运行与数据接入")
+
+    st.caption(
+        ":material/cloud_done: API 模式：数据与 Pipeline 请求经 FastAPI 后端；"
+        ":material/cloud_off: 本地模式：直接读取 V30 聚合 CSV 与本地 SQLite。"
+    )
+
+    col_upload, col_pipeline = st.columns(2)
+
+    with col_upload:
+        st.markdown("#### 通用单表质量体检")
+        st.caption("上传 CSV/XLSX，执行缺失/类型/坐标/IQR-Z-score 审计；不计算 DHI/SSI/SMI 领域指标。")
+        uploaded = st.file_uploader("选择数据文件", type=["csv", "xlsx"], key="upload_quality")
+        if uploaded is not None:
+            if st.button("运行质量体检", key="run_quality_audit"):
+                content = uploaded.getvalue()
+                try:
+                    if backend_online:
+                        audit_result = BackendClient(BACKEND_URL).ingest(uploaded.name, content)
+                    else:
+                        audit_result = audit_tabular_bytes(
+                            uploaded.name,
+                            content,
+                            os.path.join(PROJECT_ROOT, "data", "uploads"),
+                        )
+                    st.session_state["quality_audit_result"] = audit_result
+                except TableAuditError as exc:
+                    st.session_state["quality_audit_result"] = {"message": str(exc), "error": True}
+                except Exception as exc:
+                    st.session_state["quality_audit_result"] = {"message": str(exc), "error": True}
+
+            audit_result = st.session_state.get("quality_audit_result")
+            if audit_result:
+                if audit_result.get("error"):
+                    st.error(audit_result["message"])
+                else:
+                    m1, m2, m3 = st.columns(3)
+                    m1.metric("记录数", audit_result["rows"])
+                    m2.metric("字段数", audit_result["columns"])
+                    m3.metric("坐标越界", audit_result["coordinate_issues"])
+                    profile_df = pd.DataFrame(audit_result["profile"])
+                    audit_df = pd.DataFrame(audit_result["audit"])
+                    if not profile_df.empty:
+                        st.caption("字段画像")
+                        st.dataframe(profile_df, width="stretch", hide_index=True)
+                    if not audit_df.empty:
+                        st.caption("IQR / Z-score 离群审计")
+                        show_audit_cols = ["column", "n", "missing_rate", "n_outliers", "iqr_outliers"]
+                        st.dataframe(
+                            audit_df[[c for c in show_audit_cols if c in audit_df.columns]],
+                            width="stretch",
+                            hide_index=True,
+                        )
+
+    with col_pipeline:
+        st.markdown("#### 自动化 Pipeline")
+        if backend_online:
+            st.caption("当前为 API 模式：触发后端任务，结果写入 SQLite 并输出 V30 标准产物。")
+            if st.button("触发一次 Pipeline", key="trigger_pipeline"):
+                try:
+                    submitted = BackendClient(BACKEND_URL).run_pipeline(method)
+                    st.session_state["pipeline_submit"] = submitted
+                except Exception as exc:
+                    st.session_state["pipeline_submit"] = {"message": str(exc), "error": True}
+            submitted = st.session_state.get("pipeline_submit")
+            if submitted:
+                if submitted.get("error"):
+                    st.error(submitted["message"])
+                else:
+                    st.caption(f"任务已提交：`{submitted['run_id'][:12]}...`，状态 `{submitted['status']}`")
+            try:
+                runs = BackendClient(BACKEND_URL).list_runs(limit=10)
+            except Exception:
+                runs = []
+        else:
+            st.caption("本地模式：可直接在终端运行 CLI 全量 Pipeline（需本地原始数据）。")
+            st.code("python -m src.pipeline.cli run --config configs/pipeline.toml --method entropy", language="bash")
+            store = RunStore(os.path.join(PROJECT_ROOT, "data", "platform.db"))
+            store.initialize()
+            runs = store.list_runs(limit=10)
+            store.close()
+
+        if runs:
+            st.caption("最近运行记录")
+            runs_df = pd.DataFrame(
+                [
+                    {
+                        "run_id": r["run_id"][:12],
+                        "状态": r["status"],
+                        "权重方案": r["method"],
+                        "耗时(ms)": r.get("duration_ms"),
+                        "开始时间": r.get("started_at"),
+                    }
+                    for r in runs
+                ]
+            )
+            st.dataframe(runs_df, width="stretch", hide_index=True)
+        else:
+            st.caption("暂无 Pipeline 运行记录。")
 
 # ---- 页脚 ----
 st.caption(
