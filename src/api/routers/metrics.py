@@ -39,7 +39,7 @@ def metrics_trend(
     if metric not in profile.columns:
         return {"metric": metric, "scale_km": scale_km, "items": [], "message": f"指标不存在，可选: {list(profile.columns)}"}
     items = [
-        {"anchor_name": str(r.anchor_name), "value": float(r[metric])}
+        {"anchor_name": str(r.anchor_name), "value": float(getattr(r, metric))}
         for r in profile.sort_values(metric, ascending=False).itertuples(index=False)
     ]
     return {"metric": metric, "scale_km": scale_km, "items": items}

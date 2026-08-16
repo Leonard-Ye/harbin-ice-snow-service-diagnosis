@@ -71,6 +71,15 @@ def test_anchor_not_found(client):
     assert resp.json()["detail"]["code"] == "ANCHOR_NOT_FOUND"
 
 
+def test_metrics_trend(client):
+    resp = client.get("/api/v1/metrics/trend?metric=supply_total&scale_km=3")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["metric"] == "supply_total"
+    assert len(body["items"]) == 20
+    assert body["items"][0]["value"] >= body["items"][-1]["value"]
+
+
 def test_quality_audit(client):
     resp = client.get("/api/v1/quality/audit")
     assert resp.status_code == 200
