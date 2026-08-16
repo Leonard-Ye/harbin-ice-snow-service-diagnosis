@@ -52,3 +52,6 @@ temp2.py
 .gemini_rules
 .idea/
 .vscode/
+
+# ===== Pipeline 运行时数据（SQLite / 上传临时文件 / 报表产物）=====
+data/
