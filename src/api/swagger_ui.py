@@ -294,7 +294,6 @@ _TOGGLE_JS = """
     if (observer || !document.body) return;
     observer = new MutationObserver(function () {
       ensureToggle();
-      applyPageMeta();
       translatePage();
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
