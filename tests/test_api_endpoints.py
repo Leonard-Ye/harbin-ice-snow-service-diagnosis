@@ -20,7 +20,9 @@ def test_swagger_docs_zh(client):
     assert "智能多源数据自动化与分析平台" in resp.text
     assert "lang-toggle" in resp.text
     assert "defaultModelsExpandDepth" in resp.text
-    assert "--accent: #38BDF8" in resp.text
+    assert "--accent: #0284C7" in resp.text
+    assert "swagger-controls" in resp.text
+    assert "theme-toggle" in resp.text
     assert resp.headers["cache-control"] == "no-store"
 
 
