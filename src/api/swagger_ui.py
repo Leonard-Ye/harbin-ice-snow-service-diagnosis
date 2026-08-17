@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""自定义 Swagger UI：Streamlit 风格 + 中英切换 + 默认折叠 Schema。
+"""自定义 Swagger UI：dashboard 同款主题 + 中英切换 + 默认折叠 Schema。
 
-设计说明：
-- 使用 FastAPI 官方 get_swagger_ui_html() 生成页面，再注入 CSS/JS；
-- 服务端按 ?lang=zh|en 渲染标题与描述，前端按钮切换 URL；
-- 静态 UI 标签通过字典 + MutationObserver 动态翻译；
-- 不修改 OpenAPI schema，不影响 API 契约。
+主题 token 与 dashboard/ui_theme.py 保持一致（冰晶蓝 / 极光紫 / 玻璃拟态），
+通过 prefers-color-scheme 自动匹配深/浅模式。
 """
 from __future__ import annotations
 
@@ -37,67 +34,109 @@ DESCRIPTIONS = {
     ),
 }
 
-_STREAMLIT_CSS = """
+# 与 dashboard/ui_theme.py DARK / LIGHT token 对齐
+_DASHBOARD_CSS = """
 :root {
-  --st-red: #FF4B4B;
-  --st-bg: #FFFFFF;
-  --st-page: #F8F9FB;
-  --st-text: #262730;
-  --st-muted: #555867;
-  --st-border: #E6EAF2;
-  --st-radius: 10px;
+  --bg: #0B0F17;
+  --panel: #131B2A;
+  --panel2: #1A2436;
+  --text: #F8FAFC;
+  --muted: #94A3B8;
+  --accent: #38BDF8;
+  --accent2: #C084FC;
+  --border: rgba(255, 255, 255, 0.08);
+  --grid: rgba(255, 255, 255, 0.05);
+  --card-bg: rgba(19, 27, 42, 0.75);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
+  --glow: 0 0 20px rgba(56, 189, 248, 0.20);
+  --get: #34D399;
+  --post: #38BDF8;
+  --put: #FB923C;
+  --delete: #F87171;
 }
-html, body { background: var(--st-page) !important; }
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F8FAFC;
+    --panel: #FFFFFF;
+    --panel2: #F1F5F9;
+    --text: #0F172A;
+    --muted: #64748B;
+    --accent: #0284C7;
+    --accent2: #9333EA;
+    --border: rgba(0, 0, 0, 0.06);
+    --grid: rgba(0, 0, 0, 0.05);
+    --card-bg: rgba(255, 255, 255, 0.90);
+    --shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    --glow: 0 0 15px rgba(2, 132, 199, 0.15);
+    --get: #16A34A;
+    --post: #0284C7;
+    --put: #EA580C;
+    --delete: #DC2626;
+  }
+}
+
+html, body { background: var(--bg) !important; }
 body { margin: 0; }
 .swagger-ui {
-  font-family: "Source Sans Pro", "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
-  color: var(--st-text);
+  color: var(--text);
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif !important;
 }
 .swagger-ui .topbar {
-  background: var(--st-bg);
-  border-bottom: 1px solid var(--st-border);
-  box-shadow: 0 1px 2px rgba(38, 39, 48, 0.04);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
   padding: 8px 0;
 }
 .swagger-ui .topbar .download-url-wrapper { display: none !important; }
-.swagger-ui .info { margin: 26px 0 20px; }
-.swagger-ui .info .title {
-  color: var(--st-text);
-  font-size: 24px;
-  font-weight: 700;
-}
-.swagger-ui .info .base-url { color: var(--st-muted); }
-.swagger-ui .info .description .renderedMarkdown { color: var(--st-muted); }
+.swagger-ui .info { margin: 26px 0 22px; }
+.swagger-ui .info .title { color: var(--text); font-size: 24px; font-weight: 700; }
+.swagger-ui .info .base-url { color: var(--muted); }
+.swagger-ui .info .description .renderedMarkdown,
+.swagger-ui .info .description .renderedMarkdown p { color: var(--muted); }
+
 .swagger-ui .scheme-container {
-  background: var(--st-bg);
-  border: 1px solid var(--st-border);
-  border-radius: var(--st-radius);
-  box-shadow: 0 1px 3px rgba(38, 39, 48, 0.06);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, rgba(192, 132, 252, 0.03) 100%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
   margin: 0 0 22px;
   padding: 14px 20px;
 }
 .swagger-ui .opblock-tag {
-  color: var(--st-text);
-  border-bottom: 1px solid var(--st-border);
-  font-weight: 650;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
 }
+.swagger-ui .opblock-tag-section .opblock-tag small { color: var(--muted); }
 .swagger-ui .opblock {
-  background: var(--st-bg);
-  border: 1px solid var(--st-border);
-  border-radius: var(--st-radius);
-  box-shadow: 0 1px 3px rgba(38, 39, 48, 0.06);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
   margin: 0 0 14px;
   overflow: hidden;
 }
-.swagger-ui .opblock .opblock-summary {
-  border: none;
-  border-radius: 0;
-  padding: 10px 16px;
-}
+.swagger-ui .opblock .opblock-summary { border: none; padding: 10px 16px; }
 .swagger-ui .opblock-summary-method {
   border-radius: 6px;
   font-size: 12px;
   min-width: 76px;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--get); }
+.swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--post); }
+.swagger-ui .opblock.opblock-put .opblock-summary-method { background: var(--put); }
+.swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--delete); }
+.swagger-ui .opblock-description-wrapper,
+.swagger-ui .opblock-external-docs-wrapper,
+.swagger-ui .opblock-title_normal,
+.swagger-ui .opblock-section-header h4,
+.swagger-ui .tab li button.tablinks,
+.swagger-ui .response-col_status,
+.swagger-ui table thead tr td { color: var(--text); }
+.swagger-ui .opblock-section-header {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 .swagger-ui .btn {
   border-radius: 8px;
@@ -105,43 +144,55 @@ body { margin: 0; }
   font-weight: 600;
 }
 .swagger-ui .btn.authorize {
-  background: var(--st-bg);
-  border-color: var(--st-red);
-  color: var(--st-red);
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
 }
-.swagger-ui .btn.authorize:hover { background: #FFF1F1; }
-.swagger-ui .btn.execute { background: var(--st-red); color: #fff; }
-.swagger-ui .btn.execute:hover { background: #E94545; }
-.swagger-ui .btn.cancel { color: var(--st-muted); }
+.swagger-ui .btn.authorize:hover { background: rgba(56, 189, 248, 0.10); }
+.swagger-ui .btn.execute { background: var(--accent); color: #0B0F17; }
+.swagger-ui .btn.execute:hover { filter: brightness(1.08); }
+.swagger-ui .btn.cancel { color: var(--muted); }
 .swagger-ui input[type="text"], .swagger-ui select {
+  background: var(--panel);
+  border-color: var(--border) !important;
   border-radius: 8px !important;
-  border-color: var(--st-border) !important;
+  color: var(--text) !important;
 }
 .swagger-ui section.models {
-  background: var(--st-bg);
-  border: 1px solid var(--st-border);
-  border-radius: var(--st-radius);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
 }
-.swagger-ui .model-box { background: var(--st-page); border-radius: 8px; }
-.swagger-ui .model-title { color: var(--st-text); }
-.swagger-ui .opblock-description-wrapper,
-.swagger-ui .opblock-external-docs-wrapper,
-.swagger-ui .opblock-title_normal { color: var(--st-muted); }
+.swagger-ui .model-box { background: var(--panel2); border-radius: 8px; }
+.swagger-ui .model-title, .swagger-ui .prop-name { color: var(--accent); }
+.swagger-ui .prop-type, .swagger-ui .prop-format { color: var(--accent2); }
+.swagger-ui table.model tbody tr td { color: var(--text); }
+.swagger-ui .dialog-ux .modal-ux {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.swagger-ui .dialog-ux .modal-ux-header h3 { color: var(--text); }
+
 .lang-toggle {
   position: fixed;
-  top: 13px;
-  right: 24px;
-  z-index: 1000;
-  background: var(--st-bg);
-  border: 1px solid var(--st-red);
+  top: 12px;
+  right: 22px;
+  z-index: 9999;
+  background: var(--panel);
+  border: 1px solid var(--accent);
   border-radius: 8px;
-  color: var(--st-red);
+  box-shadow: var(--glow);
+  color: var(--accent);
   cursor: pointer;
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 6px 14px;
 }
-.lang-toggle:hover { background: #FFF1F1; }
+.lang-toggle:hover { background: rgba(56, 189, 248, 0.12); }
 """
 
 _TRANSLATIONS = {
@@ -189,6 +240,7 @@ _TOGGLE_JS = """
   var PAGE_TITLES = __PAGE_TITLES__;
   var PAGE_DESCRIPTIONS = __PAGE_DESCRIPTIONS__;
   var EN_KEYS = {};
+  var observer = null;
   Object.keys(DICT).forEach(function (key) { EN_KEYS[key] = true; });
 
   function applyPageMeta() {
@@ -196,9 +248,8 @@ _TOGGLE_JS = """
     if (titleNode) { titleNode.textContent = PAGE_TITLES[LANG]; }
     var descNode = document.querySelector(".swagger-ui .info .description");
     if (descNode) {
-      var html = PAGE_DESCRIPTIONS[LANG].split("\n\n").filter(Boolean)
+      descNode.innerHTML = PAGE_DESCRIPTIONS[LANG].split("\\n\\n").filter(Boolean)
         .map(function (part) { return "<p>" + part + "</p>"; }).join("");
-      descNode.innerHTML = html;
     }
   }
 
@@ -207,7 +258,7 @@ _TOGGLE_JS = """
     if (node.nodeType === Node.TEXT_NODE) {
       var text = node.textContent.trim();
       if (LANG === "zh" && DICT[text]) { node.textContent = " " + DICT[text] + " "; }
-      if (LANG === "en" && EN_KEYS[text] === undefined) {
+      if (LANG === "en" && !EN_KEYS[text]) {
         Object.keys(DICT).forEach(function (en) {
           if (DICT[en] === text) { node.textContent = " " + en + " "; }
         });
@@ -221,31 +272,55 @@ _TOGGLE_JS = """
     }
   }
 
-  function translatePage() { walk(document.body); }
+  function translatePage() { walk(document.body || document.documentElement); }
 
-  function addToggle() {
+  function ensureToggle() {
+    if (document.getElementById("lang-toggle")) return;
     var btn = document.createElement("button");
-    btn.className = "lang-toggle";
+    btn.id = "lang-toggle";
     btn.type = "button";
+    btn.className = "lang-toggle";
     btn.textContent = LANG === "zh" ? "EN" : "中文";
+    btn.setAttribute("aria-label", LANG === "zh" ? "Switch to English" : "切换为中文");
     btn.addEventListener("click", function () {
       var url = new URL(window.location.href);
       url.searchParams.set("lang", OTHER);
       window.location.href = url.toString();
     });
-    document.body.appendChild(btn);
+    (document.body || document.documentElement).appendChild(btn);
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    document.documentElement.setAttribute("lang", LANG);
-    addToggle();
-    applyPageMeta();
-    translatePage();
-    var observer = new MutationObserver(function () {
+  function startObserver() {
+    if (observer || !document.body) return;
+    observer = new MutationObserver(function () {
+      ensureToggle();
+      applyPageMeta();
       translatePage();
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  });
+  }
+
+  function init() {
+    document.documentElement.setAttribute("lang", LANG);
+    ensureToggle();
+    applyPageMeta();
+    translatePage();
+    startObserver();
+  }
+
+  function boot() {
+    if (document.body) { init(); }
+    else { setTimeout(boot, 20); }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+  // Swagger UI 异步渲染兜底：即使错过 DOMContentLoaded 也会重试
+  setTimeout(init, 800);
+  setTimeout(init, 2200);
 })();
 """
 
@@ -264,7 +339,7 @@ def _render(lang: str, app: FastAPI) -> HTMLResponse:
         },
     )
     html_content = html.body.decode("utf-8") if isinstance(html.body, bytes) else str(html.body)
-    html_content = html_content.replace("</head>", f"<style>{_STREAMLIT_CSS}</style></head>")
+    html_content = html_content.replace("</head>", f"<style>{_DASHBOARD_CSS}</style></head>")
     js = (
         _TOGGLE_JS.replace("__LANG__", lang)
         .replace("__DICT__", json.dumps(_TRANSLATIONS, ensure_ascii=False))
@@ -272,7 +347,7 @@ def _render(lang: str, app: FastAPI) -> HTMLResponse:
         .replace("__PAGE_DESCRIPTIONS__", json.dumps(DESCRIPTIONS, ensure_ascii=False))
     )
     html_content = html_content.replace("</body>", f"<script>{js}</script></body>")
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(content=html_content, headers={"Cache-Control": "no-store"})
 
 
 def register_docs_routes(app: FastAPI) -> None:
